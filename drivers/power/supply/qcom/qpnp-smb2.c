@@ -1305,13 +1305,10 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CYCLE_COUNT:
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 	case POWER_SUPPLY_PROP_TEMP:
-<<<<<<< HEAD
 #if defined(CONFIG_FIH_BATTERY)
 	case POWER_SUPPLY_PROP_MANUFACTURER:
 #endif /* CONFIG_FIH_BATTERY */
-=======
 	case POWER_SUPPLY_PROP_TIME_TO_FULL_NOW:
->>>>>>> 89dbbfd116a8f05bc2cc7fd28bb4c123aee8b388
 		rc = smblib_get_prop_from_bms(chg, psp, val);
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
