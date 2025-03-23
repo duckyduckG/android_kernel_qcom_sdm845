@@ -460,6 +460,9 @@ static int smb2_parse_dt(struct smb2 *chip)
 	chg->fcc_stepper_enable = of_property_read_bool(node,
 					"qcom,fcc-stepping-enable");
 
+	chg->ufp_only_mode = of_property_read_bool(node,
+					"qcom,ufp-only-mode");
+					
 #if defined(CONFIG_FIH_BATTERY)
 	rc = of_property_read_u32(node, "fih,info-update-ms", chg->info_update_ms);
 	if (rc < 0) {
@@ -1149,6 +1152,7 @@ static int smb2_init_dc_psy(struct smb2 *chip)
  *************************/
 
 static enum power_supply_property smb2_batt_props[] = {
+	POWER_SUPPLY_PROP_CHARGING_ENABLED,
 	POWER_SUPPLY_PROP_INPUT_SUSPEND,
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_HEALTH,
@@ -1179,6 +1183,8 @@ static enum power_supply_property smb2_batt_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT,
 	POWER_SUPPLY_PROP_CHARGE_COUNTER,
 	POWER_SUPPLY_PROP_CHARGE_FULL,
+	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
+	POWER_SUPPLY_PROP_TIME_TO_FULL_NOW,
 	POWER_SUPPLY_PROP_CYCLE_COUNT,
 	POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE,
 #if defined(CONFIG_FIH_BATTERY)
@@ -1203,6 +1209,9 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
 		rc = smblib_get_prop_batt_present(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
+		val->intval = !get_effective_result(chg->chg_disable_votable);
 		break;
 	case POWER_SUPPLY_PROP_INPUT_SUSPEND:
 		rc = smblib_get_prop_input_suspend(chg, val);
@@ -1292,12 +1301,17 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_COUNTER:
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
+	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
 	case POWER_SUPPLY_PROP_CYCLE_COUNT:
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 	case POWER_SUPPLY_PROP_TEMP:
+<<<<<<< HEAD
 #if defined(CONFIG_FIH_BATTERY)
 	case POWER_SUPPLY_PROP_MANUFACTURER:
 #endif /* CONFIG_FIH_BATTERY */
+=======
+	case POWER_SUPPLY_PROP_TIME_TO_FULL_NOW:
+>>>>>>> 89dbbfd116a8f05bc2cc7fd28bb4c123aee8b388
 		rc = smblib_get_prop_from_bms(chg, psp, val);
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
@@ -1331,6 +1345,9 @@ static int smb2_batt_set_prop(struct power_supply *psy,
 	switch (prop) {
 	case POWER_SUPPLY_PROP_STATUS:
 		rc = smblib_set_prop_batt_status(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
+		vote(chg->chg_disable_votable, USER_VOTER, !!!val->intval, 0);
 		break;
 	case POWER_SUPPLY_PROP_INPUT_SUSPEND:
 		rc = smblib_set_prop_input_suspend(chg, val);
@@ -1421,6 +1438,7 @@ static int smb2_batt_prop_is_writeable(struct power_supply *psy,
 {
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
+	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
 	case POWER_SUPPLY_PROP_INPUT_SUSPEND:
 	case POWER_SUPPLY_PROP_SYSTEM_TEMP_LEVEL:
 	case POWER_SUPPLY_PROP_CAPACITY:
@@ -2083,6 +2101,7 @@ static int smb2_post_init(struct smb2 *chip)
 {
 	struct smb_charger *chg = &chip->chg;
 	int rc;
+	u8 stat;
 
 	/* In case the usb path is suspended, we would have missed disabling
 	 * the icl change interrupt because the interrupt could have been
@@ -2090,13 +2109,36 @@ static int smb2_post_init(struct smb2 *chip)
 	 */
 	rerun_election(chg->usb_icl_votable);
 
-	/* configure power role for dual-role */
-	rc = smblib_masked_write(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
-				 TYPEC_POWER_ROLE_CMD_MASK, 0);
-	if (rc < 0) {
-		dev_err(chg->dev,
-			"Couldn't configure power role for DRP rc=%d\n", rc);
-		return rc;
+	/* Force charger in Sink Only mode */
+	if (chg->ufp_only_mode) {
+		rc = smblib_read(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
+				&stat);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't read SOFTWARE_CTRL_REG rc=%d\n", rc);
+			return rc;
+		}
+
+		if (!(stat & UFP_EN_CMD_BIT)) {
+			/* configure charger in UFP only mode */
+			rc  = smblib_force_ufp(chg);
+			if (rc < 0) {
+				dev_err(chg->dev,
+					"Couldn't force UFP mode rc=%d\n", rc);
+				return rc;
+			}
+		}
+	} else {
+		/* configure power role for dual-role */
+		rc = smblib_masked_write(chg,
+					TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
+					TYPEC_POWER_ROLE_CMD_MASK, 0);
+		if (rc < 0) {
+			dev_err(chg->dev,
+				"Couldn't configure power role for DRP rc=%d\n",
+				rc);
+			return rc;
+		}
 	}
 
 	rerun_election(chg->usb_irq_enable_votable);
@@ -3024,8 +3066,9 @@ static void smb2_shutdown(struct platform_device *pdev)
 	/* disable all interrupts */
 	smb2_disable_interrupts(chg);
 
-	/* configure power role for UFP */
-	smblib_masked_write(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
+	if (!chg->ufp_only_mode)
+		/* configure power role for UFP */
+		smblib_masked_write(chg, TYPE_C_INTRPT_ENB_SOFTWARE_CTRL_REG,
 				TYPEC_POWER_ROLE_CMD_MASK, UFP_EN_CMD_BIT);
 
 	/* force HVDCP to 5V */

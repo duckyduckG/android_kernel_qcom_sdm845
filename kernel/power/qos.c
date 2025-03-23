@@ -267,12 +267,20 @@ static const struct file_operations pm_qos_debug_fops = {
 	.release        = single_release,
 };
 
-static inline void pm_qos_set_value_for_cpus(struct pm_qos_constraints *c,
+static inline int pm_qos_set_value_for_cpus(struct pm_qos_constraints *c,
 		struct cpumask *cpus)
 {
 	struct pm_qos_request *req = NULL;
 	int cpu;
 	s32 qos_val[NR_CPUS] = { [0 ... (NR_CPUS - 1)] = c->default_value };
+
+	/*
+	 * pm_qos_constraints can be from different classes,
+	 * Update cpumask only only for CPU_DMA_LATENCY classes
+	 */
+
+	if (c != pm_qos_array[PM_QOS_CPU_DMA_LATENCY]->constraints)
+		return -EINVAL;
 
 	plist_for_each_entry(req, &c->list, node) {
 		for_each_cpu(cpu, &req->cpus_affine) {
@@ -300,6 +308,8 @@ static inline void pm_qos_set_value_for_cpus(struct pm_qos_constraints *c,
 			cpumask_set_cpu(cpu, cpus);
 		c->target_per_cpu[cpu] = qos_val[cpu];
 	}
+
+	return 0;
 }
 
 /**
@@ -353,7 +363,7 @@ int pm_qos_update_target(struct pm_qos_constraints *c,
 	curr_value = pm_qos_get_value(c);
 	cpumask_clear(&cpus);
 	pm_qos_set_value(c, curr_value);
-	pm_qos_set_value_for_cpus(c, &cpus);
+	ret = pm_qos_set_value_for_cpus(c, &cpus);
 
 	spin_unlock_irqrestore(&pm_qos_lock, flags);
 
@@ -364,7 +374,8 @@ int pm_qos_update_target(struct pm_qos_constraints *c,
 	 * to update the new qos restriction for the cores
 	 */
 
-	if (!cpumask_empty(&cpus)) {
+	if (!cpumask_empty(&cpus) ||
+	   (ret && prev_value != curr_value)) {
 		ret = 1;
 		if (c->notifiers)
 			blocking_notifier_call_chain(c->notifiers,
@@ -544,19 +555,29 @@ static void pm_qos_irq_release(struct kref *ref)
 }
 
 static void pm_qos_irq_notify(struct irq_affinity_notify *notify,
-		const cpumask_t *mask)
+		const cpumask_t *unused_mask)
 {
 	unsigned long flags;
 	struct pm_qos_request *req = container_of(notify,
 					struct pm_qos_request, irq_notify);
 	struct pm_qos_constraints *c =
 				pm_qos_array[req->pm_qos_class]->constraints;
+	struct irq_desc *desc = irq_to_desc(req->irq);
+	struct cpumask *new_affinity =
+			irq_data_get_effective_affinity_mask(&desc->irq_data);
+	bool affinity_changed = false;
 
 	spin_lock_irqsave(&pm_qos_lock, flags);
-	cpumask_copy(&req->cpus_affine, mask);
+	if (!cpumask_equal(&req->cpus_affine, new_affinity)) {
+		cpumask_copy(&req->cpus_affine, new_affinity);
+		affinity_changed = true;
+	}
+
 	spin_unlock_irqrestore(&pm_qos_lock, flags);
 
-	pm_qos_update_target(c, req, PM_QOS_UPDATE_REQ, req->node.prio);
+	if (affinity_changed)
+		pm_qos_update_target(c, req, PM_QOS_UPDATE_REQ,
+				     req->node.prio);
 }
 #endif
 
@@ -601,9 +622,16 @@ void pm_qos_add_request(struct pm_qos_request *req,
 			if (!desc)
 				return;
 
-			mask = desc->irq_data.common->affinity;
+			/*
+			 * If the IRQ is not started, the effective affinity
+			 * won't be set. So fallback to the default affinity.
+			 */
+			mask = irq_data_get_effective_affinity_mask(
+						&desc->irq_data);
+			if (cpumask_empty(mask))
+				mask = irq_data_get_affinity_mask(
+						&desc->irq_data);
 
-			/* Get the current affinity */
 			cpumask_copy(&req->cpus_affine, mask);
 			req->irq_notify.irq = req->irq;
 			req->irq_notify.notify = pm_qos_irq_notify;

@@ -228,12 +228,14 @@ early_param("ecc", early_ecc);
 static int __init early_cachepolicy(char *p)
 {
 	pr_warn("cachepolicy kernel parameter not supported without cp15\n");
+	return 0;
 }
 early_param("cachepolicy", early_cachepolicy);
 
 static int __init noalign_setup(char *__unused)
 {
 	pr_warn("noalign kernel parameter not supported without cp15\n");
+	return 1;
 }
 __setup("noalign", noalign_setup);
 
@@ -1168,9 +1170,28 @@ void __init adjust_lowmem_bounds(void)
 	 */
 	vmalloc_limit = (u64)(uintptr_t)vmalloc_min - PAGE_OFFSET + PHYS_OFFSET;
 
+	/*
+	 * The first usable region must be PMD aligned. Mark its start
+	 * as MEMBLOCK_NOMAP if it isn't
+	 */
+	for_each_memblock(memory, reg) {
+		if (!memblock_is_nomap(reg)) {
+			if (!IS_ALIGNED(reg->base, PMD_SIZE)) {
+				phys_addr_t len;
+
+				len = round_up(reg->base, PMD_SIZE) - reg->base;
+				memblock_mark_nomap(reg->base, len);
+			}
+			break;
+		}
+	}
+
 	for_each_memblock(memory, reg) {
 		phys_addr_t block_start = reg->base;
 		phys_addr_t block_end = reg->base + reg->size;
+
+		if (memblock_is_nomap(reg))
+			continue;
 
 		if (reg->base < vmalloc_limit) {
 			if (block_end > lowmem_limit)
@@ -1653,7 +1674,13 @@ static noinline void __init split_pmd(pmd_t *pmd, unsigned long addr,
 	pte = start_pte;
 
 	do {
-		set_pte_ext(pte, pfn_pte(pfn, type->prot_pte), 0);
+		if (((unsigned long)_stext <= addr) &&
+			(addr < (unsigned long)__init_end))
+			set_pte_ext(pte, pfn_pte(pfn,
+				mem_types[MT_MEMORY_RWX].prot_pte), 0);
+		else
+			set_pte_ext(pte, pfn_pte(pfn,
+				mem_types[MT_MEMORY_RW].prot_pte), 0);
 		pfn++;
 	} while (pte++, addr += PAGE_SIZE, addr != end);
 

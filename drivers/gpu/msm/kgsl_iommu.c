@@ -1,4 +1,5 @@
-/* Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -20,6 +21,7 @@
 #include <linux/msm_kgsl.h>
 #include <linux/ratelimit.h>
 #include <linux/of_platform.h>
+#include <linux/random.h>
 #include <soc/qcom/scm.h>
 #include <soc/qcom/secure_buffer.h>
 #include <linux/compat.h>
@@ -224,8 +226,9 @@ static void kgsl_iommu_remove_global(struct kgsl_mmu *mmu,
 static void kgsl_iommu_add_global(struct kgsl_mmu *mmu,
 		struct kgsl_memdesc *memdesc, const char *name)
 {
-	int bit;
+	u32 bit;
 	u64 size = kgsl_memdesc_footprint(memdesc);
+	int start = 0;
 
 	if (memdesc->gpuaddr != 0)
 		return;
@@ -233,10 +236,27 @@ static void kgsl_iommu_add_global(struct kgsl_mmu *mmu,
 	if (WARN_ON(global_pt_count >= GLOBAL_PT_ENTRIES))
 		return;
 
-	bit = bitmap_find_next_zero_area(global_map, GLOBAL_MAP_PAGES,
-		0, size >> PAGE_SHIFT, 0);
+	if (WARN_ON(size > KGSL_IOMMU_GLOBAL_MEM_SIZE))
+		return;
 
-	if (WARN_ON(bit >= GLOBAL_MAP_PAGES))
+	if (memdesc->priv & KGSL_MEMDESC_RANDOM) {
+		u32 range = GLOBAL_MAP_PAGES - (size >> PAGE_SHIFT);
+
+		start = get_random_int() % range;
+	}
+
+	while (start >= 0) {
+		bit = bitmap_find_next_zero_area(global_map, GLOBAL_MAP_PAGES,
+			start, size >> PAGE_SHIFT, 0);
+
+		if (bit < GLOBAL_MAP_PAGES)
+			break;
+
+		start--;
+	}
+
+	if (WARN_ON(start < 0))
+>>>>>>> 89dbbfd116a8f05bc2cc7fd28bb4c123aee8b388
 		return;
 
 	memdesc->gpuaddr =
@@ -631,7 +651,7 @@ static void _get_entries(struct kgsl_process_private *private,
 		prev->flags = p->memdesc.flags;
 		prev->priv = p->memdesc.priv;
 		prev->pending_free = p->pending_free;
-		prev->pid = private->pid;
+		prev->pid = pid_nr(private->pid);
 		__kgsl_get_memory_usage(prev);
 	}
 
@@ -641,7 +661,7 @@ static void _get_entries(struct kgsl_process_private *private,
 		next->flags = n->memdesc.flags;
 		next->priv = n->memdesc.priv;
 		next->pending_free = n->pending_free;
-		next->pid = private->pid;
+		next->pid = pid_nr(private->pid);
 		__kgsl_get_memory_usage(next);
 	}
 }
@@ -763,6 +783,7 @@ static int kgsl_iommu_fault_handler(struct iommu_domain *domain,
 	unsigned int curr_context_id = 0;
 	struct kgsl_context *context;
 	char *fault_type = "unknown";
+	bool fault_ret_flag = false;
 
 	static DEFINE_RATELIMIT_STATE(_rs,
 					DEFAULT_RATELIMIT_INTERVAL,
@@ -811,7 +832,7 @@ static int kgsl_iommu_fault_handler(struct iommu_domain *domain,
 	if (context != NULL) {
 		/* save pagefault timestamp for GFT */
 		set_bit(KGSL_CONTEXT_PRIV_PAGEFAULT, &context->priv);
-		pid = context->proc_priv->pid;
+		pid = pid_nr(context->proc_priv->pid);
 	}
 
 	ctx->fault = 1;
@@ -823,9 +844,11 @@ static int kgsl_iommu_fault_handler(struct iommu_domain *domain,
 		 * Turn off GPU IRQ so we don't get faults from it too.
 		 * The device mutex must be held to change power state
 		 */
-		mutex_lock(&device->mutex);
-		kgsl_pwrctrl_change_state(device, KGSL_STATE_AWARE);
-		mutex_unlock(&device->mutex);
+		if (mutex_trylock(&device->mutex)) {
+			kgsl_pwrctrl_change_state(device, KGSL_STATE_AWARE);
+			mutex_unlock(&device->mutex);
+		} else
+			fault_ret_flag = true;
 	}
 
 	ptbase = KGSL_IOMMU_GET_CTX_REG_Q(ctx, TTBR0);
@@ -896,13 +919,12 @@ static int kgsl_iommu_fault_handler(struct iommu_domain *domain,
 		}
 	}
 
-
 	/*
 	 * We do not want the h/w to resume fetching data from an iommu
 	 * that has faulted, this is better for debugging as it will stall
 	 * the GPU and trigger a snapshot. Return EBUSY error.
 	 */
-	if (test_bit(KGSL_FT_PAGEFAULT_GPUHALT_ENABLE,
+	if (!fault_ret_flag && test_bit(KGSL_FT_PAGEFAULT_GPUHALT_ENABLE,
 		&adreno_dev->ft_pf_policy) &&
 		(flags & IOMMU_FAULT_TRANSACTION_STALLED)) {
 		uint32_t sctlr_val;
@@ -2413,14 +2435,18 @@ static uint64_t kgsl_iommu_find_svm_region(struct kgsl_pagetable *pagetable,
 static bool iommu_addr_in_svm_ranges(struct kgsl_iommu_pt *pt,
 	u64 gpuaddr, u64 size)
 {
+	u64 end = gpuaddr + size;
+
+	/* Make sure size is not zero and we don't wrap around */
+	if (end <= gpuaddr)
+		return false;
+
 	if ((gpuaddr >= pt->compat_va_start && gpuaddr < pt->compat_va_end) &&
-		((gpuaddr + size) > pt->compat_va_start &&
-			(gpuaddr + size) <= pt->compat_va_end))
+		(end > pt->compat_va_start && end <= pt->compat_va_end))
 		return true;
 
 	if ((gpuaddr >= pt->svm_start && gpuaddr < pt->svm_end) &&
-		((gpuaddr + size) > pt->svm_start &&
-			(gpuaddr + size) <= pt->svm_end))
+		(end > pt->svm_start && end <= pt->svm_end))
 		return true;
 
 	return false;
@@ -2549,20 +2575,21 @@ static int kgsl_iommu_svm_range(struct kgsl_pagetable *pagetable,
 }
 
 static bool kgsl_iommu_addr_in_range(struct kgsl_pagetable *pagetable,
-		uint64_t gpuaddr)
+		uint64_t gpuaddr, uint64_t size)
 {
 	struct kgsl_iommu_pt *pt = pagetable->priv;
 
 	if (gpuaddr == 0)
 		return false;
 
-	if (gpuaddr >= pt->va_start && gpuaddr < pt->va_end)
+	if (gpuaddr >= pt->va_start && (gpuaddr + size) < pt->va_end)
 		return true;
 
-	if (gpuaddr >= pt->compat_va_start && gpuaddr < pt->compat_va_end)
+	if (gpuaddr >= pt->compat_va_start &&
+			(gpuaddr + size) < pt->compat_va_end)
 		return true;
 
-	if (gpuaddr >= pt->svm_start && gpuaddr < pt->svm_end)
+	if (gpuaddr >= pt->svm_start && (gpuaddr + size) < pt->svm_end)
 		return true;
 
 	return false;

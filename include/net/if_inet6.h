@@ -191,7 +191,6 @@ struct inet6_dev {
 	int			dead;
 
 	u32			desync_factor;
-	u8			rndid[8];
 	struct list_head	tempaddr_list;
 
 	struct in6_addr		token;
@@ -204,7 +203,6 @@ struct inet6_dev {
 	__s32			rs_interval;	/* in jiffies */
 	__u8			rs_probes;
 
-	__u8			addr_gen_mode;
 	unsigned long		tstamp; /* ipv6InterfaceTable update timestamp */
 	struct rcu_head		rcu;
 };

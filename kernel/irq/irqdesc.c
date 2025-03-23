@@ -60,8 +60,19 @@ static int alloc_masks(struct irq_desc *desc, gfp_t gfp, int node)
 				     gfp, node))
 		return -ENOMEM;
 
+#ifdef CONFIG_GENERIC_IRQ_EFFECTIVE_AFF_MASK
+	if (!zalloc_cpumask_var_node(&desc->irq_common_data.effective_affinity,
+				     GFP_KERNEL, node)) {
+		free_cpumask_var(desc->irq_common_data.affinity);
+		return -ENOMEM;
+	}
+#endif
+
 #ifdef CONFIG_GENERIC_PENDING_IRQ
 	if (!zalloc_cpumask_var_node(&desc->pending_mask, gfp, node)) {
+#ifdef CONFIG_GENERIC_IRQ_EFFECTIVE_AFF_MASK
+		free_cpumask_var(desc->irq_common_data.effective_affinity);
+#endif
 		free_cpumask_var(desc->irq_common_data.affinity);
 		return -ENOMEM;
 	}
@@ -267,6 +278,18 @@ static void irq_sysfs_add(int irq, struct irq_desc *desc)
 	}
 }
 
+static void irq_sysfs_del(struct irq_desc *desc)
+{
+	/*
+	 * If irq_sysfs_init() has not yet been invoked (early boot), then
+	 * irq_kobj_base is NULL and the descriptor was never added.
+	 * kobject_del() complains about a object with no parent, so make
+	 * it conditional.
+	 */
+	if (irq_kobj_base)
+		kobject_del(&desc->kobj);
+}
+
 static int __init irq_sysfs_init(void)
 {
 	struct irq_desc *desc;
@@ -297,6 +320,7 @@ static struct kobj_type irq_kobj_type = {
 };
 
 static void irq_sysfs_add(int irq, struct irq_desc *desc) {}
+static void irq_sysfs_del(struct irq_desc *desc) {}
 
 #endif /* CONFIG_SYSFS */
 
@@ -325,6 +349,9 @@ static void free_masks(struct irq_desc *desc)
 	free_cpumask_var(desc->pending_mask);
 #endif
 	free_cpumask_var(desc->irq_common_data.affinity);
+#ifdef CONFIG_GENERIC_IRQ_EFFECTIVE_AFF_MASK
+	free_cpumask_var(desc->irq_common_data.effective_affinity);
+#endif
 }
 #else
 static inline void free_masks(struct irq_desc *desc) { }
@@ -406,7 +433,7 @@ static void free_desc(unsigned int irq)
 	 * The sysfs entry must be serialized against a concurrent
 	 * irq_sysfs_init() as well.
 	 */
-	kobject_del(&desc->kobj);
+	irq_sysfs_del(desc);
 	delete_irq_desc(irq);
 
 	/*

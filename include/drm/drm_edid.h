@@ -114,7 +114,7 @@ struct detailed_data_monitor_range {
 			u8 supported_scalings;
 			u8 preferred_refresh;
 		} __attribute__((packed)) cvt;
-	} formula;
+	} __attribute__((packed)) formula;
 } __attribute__((packed));
 
 struct detailed_data_wpindex {
@@ -147,7 +147,7 @@ struct detailed_non_pixel {
 		struct detailed_data_wpindex color;
 		struct std_timing timings[6];
 		struct cvt_timing cvt[4];
-	} data;
+	} __attribute__((packed)) data;
 } __attribute__((packed));
 
 #define EDID_DETAIL_EST_TIMINGS 0xf7
@@ -165,7 +165,7 @@ struct detailed_timing {
 	union {
 		struct detailed_pixel_timing pixel_data;
 		struct detailed_non_pixel other_data;
-	} data;
+	} __attribute__((packed)) data;
 } __attribute__((packed));
 
 #define DRM_EDID_INPUT_SERRATION_VSYNC (1 << 0)
@@ -216,6 +216,15 @@ struct detailed_timing {
 #define DRM_EDID_YCBCR420_DC_48  (1 << 2)
 #define DRM_EDID_YCBCR420_DC_36  (1 << 1)
 #define DRM_EDID_YCBCR420_DC_30  (1 << 0)
+
+#define DRM_EDID_COLORIMETRY_xvYCC_601	(1 << 0)
+#define DRM_EDID_COLORIMETRY_xvYCC_709	(1 << 1)
+#define DRM_EDID_COLORIMETRY_sYCC_601	(1 << 2)
+#define DRM_EDID_COLORIMETRY_ADBYCC_601	(1 << 3)
+#define DRM_EDID_COLORIMETRY_ADB_RGB	(1 << 4)
+#define DRM_EDID_COLORIMETRY_BT2020_CYCC	(1 << 5)
+#define DRM_EDID_COLORIMETRY_BT2020_YCC	(1 << 6)
+#define DRM_EDID_COLORIMETRY_BT2020_RGB	(1 << 7)
 
 /* ELD Header Block */
 #define DRM_ELD_HEADER_BLOCK_SIZE	4
@@ -449,6 +458,7 @@ struct edid *drm_edid_duplicate(const struct edid *edid);
 int drm_add_edid_modes(struct drm_connector *connector, struct edid *edid);
 
 u8 drm_match_cea_mode(const struct drm_display_mode *to_match);
+u8 drm_match_hdmi_mode(const struct drm_display_mode *to_match);
 enum hdmi_picture_aspect drm_get_cea_aspect_ratio(const u8 video_code);
 bool drm_detect_hdmi_monitor(struct edid *edid);
 bool drm_detect_monitor_audio(struct edid *edid);

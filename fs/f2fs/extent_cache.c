@@ -175,10 +175,9 @@ bool f2fs_check_rb_tree_consistence(struct f2fs_sb_info *sbi,
 		next_re = rb_entry(next, struct rb_entry, rb_node);
 
 		if (cur_re->ofs + cur_re->len > next_re->ofs) {
-			f2fs_msg(sbi->sb, KERN_INFO, "inconsistent rbtree, "
-				"cur(%u, %u) next(%u, %u)",
-				cur_re->ofs, cur_re->len,
-				next_re->ofs, next_re->len);
+			f2fs_info(sbi, "inconsistent rbtree, cur(%u, %u) next(%u, %u)",
+				  cur_re->ofs, cur_re->len,
+				  next_re->ofs, next_re->len);
 			return false;
 		}
 
@@ -714,9 +713,8 @@ void f2fs_drop_extent_tree(struct inode *inode)
 	if (!f2fs_may_extent_tree(inode))
 		return;
 
-	set_inode_flag(inode, FI_NO_EXTENT);
-
 	write_lock(&et->lock);
+	set_inode_flag(inode, FI_NO_EXTENT);
 	__free_extent_tree(sbi, et);
 	if (et->largest.len) {
 		et->largest.len = 0;
