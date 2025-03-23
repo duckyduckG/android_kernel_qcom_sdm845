@@ -1,0 +1,90 @@
+
+qcom,scud_3320mah_aop {
+	qcom, = <24>;
+	/* #3313640_FIH_A1Plus_3340mAh_averaged_MasterSlave_Jul30th2018*/
+	qcom,batt-id-kohm = <100>;
+	qcom,battery-type = "scud_3320mah_aop_v2";
+	fih,battery-manufacturer = "SCUD-ATL";
+	qcom,max-voltage-uv = <4400000>;
+	qcom,fastchg-current-ma = <3240>;
+	qcom,fg-cc-cv-threshold-mv = <4390>;
+
+	/* step */
+	qcom,soc-based-step-chg;
+	qcom,step-chg-ranges = <0	50	3240000
+				51	100	1620000>;
+	fih,step-chg-hysteresis = <0>;
+
+	/* jeita */
+	qcom,jeita-fcc-ranges = <0	109	972000
+				 110	159	1620000
+				 160	440	3240000
+				 441	550	1620000>;
+	qcom,jeita-fv-ranges = <0	440	4400000
+				441	550	4100000>;
+	fih,jeita-hysteresis = <9>;
+
+	qcom,nom-batt-capacity-mah = <3320>;
+	qcom,battery-beta = <3450>;
+	qcom,checksum = <0x88D1>;
+	qcom,gui-version = "PMI8998GUI - 2.0.0.58";
+	qcom,fg-profile-data = [
+		 53 20 CB 04
+		 09 0B D5 05
+		 F2 1C 94 01
+		 07 05 87 03
+		 10 18 5B 23
+		 19 45 6F 53
+		 87 00 00 00
+		 12 00 00 00
+		 00 00 27 B2
+		 1F CD DF A2
+		 1B 00 08 00
+		 D3 E2 C1 ED
+		 7D 06 CF F3
+		 CD FB 02 13
+		 12 EC CA 32
+		 21 06 09 20
+		 27 00 14 00
+		 1F 20 14 05
+		 E8 0A DD 05
+		 C5 1C F5 02
+		 09 0C 25 12
+		 90 18 AB 23
+		 21 44 D5 5A
+		 6D 00 00 00
+		 0E 00 00 00
+		 00 00 76 D5
+		 79 CA A4 C2
+		 15 00 00 00
+		 17 EB C1 ED
+		 4F F4 C3 EB
+		 09 EC 58 03
+		 6F FC 62 1A
+		 99 33 CC FF
+		 07 10 00 00
+		 F9 0C 66 46
+		 15 00 40 00
+		 E8 01 0A FA
+		 FF 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+	];
+};
+

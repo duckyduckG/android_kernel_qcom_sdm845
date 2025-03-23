@@ -20,6 +20,11 @@
 #include "cam_res_mgr_api.h"
 #include "cam_res_mgr_private.h"
 
+#define FIH_SHARED_GPIO
+#ifdef FIH_SHARED_GPIO
+#include <linux/of_gpio.h>
+#endif
+
 static struct cam_res_mgr *cam_res;
 
 static void cam_res_mgr_free_res(void)
@@ -601,6 +606,22 @@ void cam_res_mgr_shared_clk_config(bool value)
 }
 EXPORT_SYMBOL(cam_res_mgr_shared_clk_config);
 
+#ifdef FIH_SHARED_GPIO
+static int cam_res_read_gpio_array(struct device_node *np, const char *propname,
+		uint *gpio_array, int array_size) {
+	int i = 0, num = 0;
+
+	for(i = 0; i < array_size; i++) {
+		num = of_get_named_gpio(np, propname, i);
+		if(!gpio_is_valid(num)) {
+			return num;
+		}
+		*(gpio_array + i) = num;
+	}
+	return 0;
+}
+#endif
+
 static int cam_res_mgr_parse_dt(struct device *dev)
 {
 	int rc = 0;
@@ -609,8 +630,12 @@ static int cam_res_mgr_parse_dt(struct device *dev)
 
 	of_node = dev->of_node;
 
+#ifdef FIH_SHARED_GPIO
+	dt->num_shared_gpio = of_gpio_named_count(of_node, "shared-gpios");
+#else
 	dt->num_shared_gpio = of_property_count_u32_elems(of_node,
 		"shared-gpios");
+#endif
 
 	if (dt->num_shared_gpio > MAX_SHARED_GPIO_SIZE ||
 		dt->num_shared_gpio <= 0) {
@@ -623,8 +648,13 @@ static int cam_res_mgr_parse_dt(struct device *dev)
 		return -EINVAL;
 	}
 
+#ifdef FIH_SHARED_GPIO
+	rc = cam_res_read_gpio_array(of_node, "shared-gpios",
+		dt->shared_gpio, dt->num_shared_gpio);
+#else
 	rc = of_property_read_u32_array(of_node, "shared-gpios",
 		dt->shared_gpio, dt->num_shared_gpio);
+#endif
 	if (rc) {
 		CAM_ERR(CAM_RES, "Get shared gpio array failed.");
 		return -EINVAL;

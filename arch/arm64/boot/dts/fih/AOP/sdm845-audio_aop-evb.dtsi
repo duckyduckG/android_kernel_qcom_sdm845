@@ -1,0 +1,152 @@
+/*
+ * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&qupv3_se8_spi {
+	status = "okay";
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sdm845_gpio65_active &sdm845_gpio66_active &sdm845_gpio67_active &sdm845_gpio68_active>;
+	pinctrl-1 = <&sdm845_gpio65_active &sdm845_gpio66_active &sdm845_gpio67_active &sdm845_gpio68_active>;
+};
+
+&slim_aud {
+    tavil_codec {
+        /delete-node/ swr_master;
+    };
+};
+
+&snd_934x {
+    fih,ti-tas2557-aop;
+    qcom,audio-routing =
+        "AIF4 VI", "MCLK",
+        "RX_BIAS", "MCLK",
+        "MADINPUT", "MCLK",
+        "AMIC2", "MIC BIAS2",
+        "MIC BIAS2", "Headset Mic",
+        "DMIC1", "MIC BIAS1",
+        "MIC BIAS1", "Digital Mic0",
+        "DMIC3", "MIC BIAS3",
+        "MIC BIAS3", "Digital Mic1",
+        "DMIC5", "MIC BIAS3",
+        "MIC BIAS3", "Digital Mic2",
+        "Lineout_2 amp", "LINEOUT2";
+
+    /delete-property/ qcom,hph-en0-gpio;    /* no use Qualcomm default HiFi amplifier */
+    /delete-property/ qcom,hph-en1-gpio;    /* no use Qualcomm default HiFi amplifier */
+
+    qcom,wsa-max-devs = <0>;                    /* no use Qualcomm default wsa speaker amplifier */
+    /delete-property/ qcom,wsa-devs;            /* no use Qualcomm default wsa speaker amplifier */
+    /delete-property/ qcom,wsa-aux-dev-prefix;  /* no use Qualcomm default wsa speaker amplifier */
+
+    /* USB Type-C Analog Audio */
+    qcom,msm-mbhc-usbc-audio-supported = <1>;
+    qcom,usbc-analog-en1-gpio = <&wcd_usbc_analog_en1_gpio>;
+    qcom,usbc-analog-en2-gpio = <&pmi8998_gpios 8 0>;
+    qcom,us-euro-gpios = <>;
+
+    /* HAC */
+    fih,hac-amp-en-gpio = <&hac_amp_en_gpio>; /* HAC enable gpio */
+
+    pinctrl-names = "quat-mi2s-active", "quat-mi2s-sleep", "quat-tdm-active", "quat-tdm-sleep", "aud_active", "aud_sleep";
+    pinctrl-0 = <&sdm845_gpio58_active &sdm845_gpio59_active &sdm845_gpio60_active &sdm845_gpio61_active>;
+    pinctrl-1 = <&sdm845_gpio58_sleep &sdm845_gpio59_sleep &sdm845_gpio60_sleep &sdm845_gpio61_sleep>;
+    pinctrl-2 = <&sdm845_gpio58_active &sdm845_gpio59_active &sdm845_gpio60_active &sdm845_gpio61_active>;
+    pinctrl-3 = <&sdm845_gpio58_sleep &sdm845_gpio59_sleep &sdm845_gpio60_sleep &sdm845_gpio61_sleep>;
+    pinctrl-4 = <&pmi8998_gpio8_default>;
+    pinctrl-5 = <&pmi8998_gpio8_sleep>;
+};
+
+/* TAS2557 SmartAmp I2C */
+&qupv3_se5_i2c {
+    status = "okay";
+
+    tas2557@4c {
+        compatible = "ti,tas2557";
+        tas2557,device-model = "AOP";
+        reg = <0x4c>;
+        ti,cdc-reset-gpio = <&pm8998_gpios 15 0>;
+        ti,irq-gpio = <&tlmm 11 0>;
+        ti,i2s-bits = <16>;   /* support 16, 24, 32 */
+        ti,bypass-tmax = <0>;   /* 0, not bypass; 1, bypass */
+        pinctrl-names = "default";
+        pinctrl-0 = <&pm8998_gpio15_default &sdm845_gpio11_default>;
+    };
+};
+
+/* TAS2557 SmartAmp I2S */
+&dai_mi2s3 {
+    compatible = "qcom,msm-dai-q6-mi2s";
+    qcom,msm-dai-q6-mi2s-dev-id = <3>;
+    qcom,msm-mi2s-rx-lines = <2>;
+    qcom,msm-mi2s-tx-lines = <1>;
+};
+
+/* USB Type-C Analog Audio */
+&pmi8998_gpios {
+    pmi8998_gpio8 {
+        pmi8998_gpio8_sleep: pmi8998_gpio8_sleep {
+            pins = "gpio8";
+            function = "normal";
+            output-low;
+            power-source = <1>;
+        };
+        pmi8998_gpio8_default: pmi8998_gpio8_default {
+            pins = "gpio8";
+            function = "normal";
+            output-high;
+            power-source = <0>;
+        };
+    };
+};
+
+/* HAC */
+&soc {
+    hac_amp_en_gpio: msm_cdc_pinctrl@88 {
+        #gpio-cells = <1>;
+        compatible = "qcom,msm-cdc-pinctrl";
+        pinctrl-names = "aud_active", "aud_sleep";
+        pinctrl-0 = <&sdm845_gpio88_active>;
+        pinctrl-1 = <&sdm845_gpio88_sleep>;
+    };
+};
+
+&tlmm {
+    sdm845_gpio88 {
+        sdm845_gpio88_sleep: sdm845_gpio88_sleep {
+            mux {
+                pins = "gpio88";
+                function = "gpio";
+            };
+
+            config {
+                pins = "gpio88";
+                drive-strength = <2>;
+                bias-disable;
+                output-low;
+            };
+        };
+
+        sdm845_gpio88_active: sdm845_gpio88_active {
+            mux {
+                pins = "gpio88";
+                function = "gpio";
+            };
+
+            config {
+                pins = "gpio88";
+                drive-strength = <2>;
+                bias-disable;
+                output-high;
+            };
+        };
+    };
+};

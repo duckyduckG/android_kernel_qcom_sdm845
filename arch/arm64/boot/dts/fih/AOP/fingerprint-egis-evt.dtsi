@@ -1,0 +1,18 @@
+/* NOTICE:
+ * Default set <status> be "disabled" in fingerprint_xxx.dtsi,
+ * and set be "okay" by fp_id (fih_fp) when bootloader load device tree.
+ */
+
+&soc {
+	egis {
+		compatible = "egis,fingerprint";
+		status = "okay";
+		interrupt-parent = <&tlmm>;
+		interrupts = <0 121 0>;
+		egisfp-gpio-reset = <&tlmm 95 0x0>;
+		egisfp-gpio-irq = <&tlmm 121 0x0>;
+		egisfp-gpio-enable = <&tlmm 78 0x0>;
+		egis,key-customer-define = <1>;
+		avdd-supply = <&pmi8998_bob>;
+	};
+};

@@ -26,6 +26,9 @@
 #include <linux/qpnp/qpnp-misc.h>
 #include "fg-core.h"
 #include "fg-reg.h"
+#if defined(CONFIG_FIH_BATTERY)
+#include "fih-battery-bbs.h"
+#endif /* CONFIG_FIH_BATTERY */
 
 #define FG_GEN3_DEV_NAME	"qcom,fg-gen3"
 
@@ -170,6 +173,9 @@ static void fg_encode_current(struct fg_sram_param *sp,
 	enum fg_sram_param_id id, int val_ma, u8 *buf);
 static void fg_encode_default(struct fg_sram_param *sp,
 	enum fg_sram_param_id id, int val, u8 *buf);
+#if defined(CONFIG_FIH_BATTERY) && defined(BBS_LOG)
+static const char *fg_get_cycle_counts(struct fg_chip *chip);
+#endif /* CONFIG_FIH_BATTERY */
 
 static struct fg_irq_info fg_irqs[FG_IRQ_MAX];
 
@@ -1024,6 +1030,10 @@ static int fg_get_batt_profile(struct fg_chip *chip)
 		return -ENXIO;
 	}
 
+#if defined(CONFIG_FIH_BATTERY) && defined(BBS_LOG)
+	BBS_BATTERY_ID(chip->batt_id_ohms);
+#endif /* CONFIG_FIH_BATTERY */
+
 	profile_node = of_batterydata_get_best_profile(batt_node,
 				chip->batt_id_ohms / 1000, NULL);
 	if (IS_ERR(profile_node))
@@ -1031,6 +1041,9 @@ static int fg_get_batt_profile(struct fg_chip *chip)
 
 	if (!profile_node) {
 		pr_err("couldn't find profile handle\n");
+#if defined(CONFIG_FIH_BATTERY) && defined(BBS_LOG)
+		BBS_BATTERY_ID_MISS();
+#endif /* CONFIG_FIH_BATTERY */
 		return -ENODATA;
 	}
 
@@ -1040,6 +1053,15 @@ static int fg_get_batt_profile(struct fg_chip *chip)
 		pr_err("battery type unavailable, rc:%d\n", rc);
 		return rc;
 	}
+
+#if defined(CONFIG_FIH_BATTERY)
+	rc = of_property_read_string(profile_node, "fih,battery-manufacturer",
+			&chip->bp.batt_mfr_str);
+	if (rc < 0) {
+		pr_err("battery manufacturer unavailable, rc:%d\n", rc);
+		chip->bp.batt_mfr_str = "Unknown";
+	}
+#endif /* CONFIG_FIH_BATTERY */
 
 	rc = of_property_read_u32(profile_node, "qcom,max-voltage-uv",
 			&chip->bp.float_volt_uv);
@@ -1402,6 +1424,13 @@ static int fg_load_learned_cap_from_sram(struct fg_chip *chip)
 
 	fg_dbg(chip, FG_CAP_LEARN, "learned_cc_uah:%lld nom_cap_uah: %lld\n",
 		chip->cl.learned_cc_uah, chip->cl.nom_cap_uah);
+#if defined(CONFIG_FIH_BATTERY) && defined(BBS_LOG)
+	BBS_BATTERY_FCC_MAX(div64_s64(chip->cl.nom_cap_uah, 1000));
+	if (div64_s64(chip->cl.learned_cc_uah * 100, chip->cl.nom_cap_uah) < 70) {
+		BBS_BATTERY_AGING();
+		BBS_BATTERY_FCC(fg_get_cycle_counts(chip), div64_s64(chip->cl.learned_cc_uah, 1000));
+	}
+#endif /* CONFIG_FIH_BATTERY */
 	return 0;
 }
 
@@ -1417,7 +1446,7 @@ static bool is_temp_valid_cap_learning(struct fg_chip *chip)
 
 	if (batt_temp > chip->dt.cl_max_temp ||
 		batt_temp < chip->dt.cl_min_temp) {
-		fg_dbg(chip, FG_CAP_LEARN, "batt temp %d out of range [%d %d]\n",
+		pr_err("batt temp %d out of range [%d %d]\n",
 			batt_temp, chip->dt.cl_min_temp, chip->dt.cl_max_temp);
 		return false;
 	}
@@ -1482,7 +1511,7 @@ static void fg_cap_learning_post_process(struct fg_chip *chip)
 	if (rc < 0)
 		pr_err("Error in saving learned_cc_uah, rc=%d\n", rc);
 
-	fg_dbg(chip, FG_CAP_LEARN, "final cc_uah = %lld, learned capacity %lld -> %lld uah\n",
+	pr_err("final cc_uah = %lld, learned capacity %lld -> %lld uah\n",
 		chip->cl.final_cc_uah, old_cap, chip->cl.learned_cc_uah);
 }
 
@@ -1512,7 +1541,7 @@ static int fg_cap_learning_process_full_data(struct fg_chip *chip)
 	delta_cc_uah = div64_u64(chip->cl.learned_cc_uah * cc_soc_delta_pct,
 				100);
 	chip->cl.final_cc_uah = chip->cl.init_cc_uah + delta_cc_uah;
-	fg_dbg(chip, FG_CAP_LEARN, "Current cc_soc=%d cc_soc_delta_pct=%u total_cc_uah=%llu\n",
+	pr_err("Current cc_soc=%d cc_soc_delta_pct=%u total_cc_uah=%llu\n",
 		cc_soc_sw, cc_soc_delta_pct, chip->cl.final_cc_uah);
 	return 0;
 }
@@ -1543,7 +1572,7 @@ static int fg_cap_learning_begin(struct fg_chip *chip, u32 batt_soc)
 	}
 
 	chip->cl.init_cc_soc_sw = cc_soc_sw;
-	fg_dbg(chip, FG_CAP_LEARN, "Capacity learning started @ battery SOC %d init_cc_soc_sw:%d\n",
+	pr_err("Capacity learning started @ battery SOC %d init_cc_soc_sw:%d\n",
 		batt_soc_msb, chip->cl.init_cc_soc_sw);
 out:
 	return rc;
@@ -1617,7 +1646,11 @@ static void fg_cap_learning_update(struct fg_chip *chip)
 				prime_cc = true;
 		}
 	} else {
+#if defined(CONFIG_FIH_BATTERY)
+		if (chip->charge_done && batt_soc_msb == FULL_SOC_RAW) {
+#else
 		if (chip->charge_done) {
+#endif /* CONFIG_FIH_BATTERY */
 			rc = fg_cap_learning_done(chip);
 			if (rc < 0)
 				pr_err("Error in completing capacity learning, rc=%d\n",
@@ -1629,7 +1662,7 @@ static void fg_cap_learning_update(struct fg_chip *chip)
 
 		if (chip->charge_status == POWER_SUPPLY_STATUS_DISCHARGING) {
 			if (!input_present) {
-				fg_dbg(chip, FG_CAP_LEARN, "Capacity learning aborted @ battery SOC %d\n",
+				pr_err("Capacity learning aborted @ battery SOC %d\n",
 					 batt_soc_msb);
 				chip->cl.active = false;
 				chip->cl.init_cc_uah = 0;
@@ -1646,7 +1679,7 @@ static void fg_cap_learning_update(struct fg_chip *chip)
 				 * intermittently.
 				 */
 			} else {
-				fg_dbg(chip, FG_CAP_LEARN, "Capacity learning aborted @ battery SOC %d\n",
+				pr_err("Capacity learning aborted @ battery SOC %d\n",
 					batt_soc_msb);
 				chip->cl.active = false;
 				chip->cl.init_cc_uah = 0;
@@ -1793,7 +1826,7 @@ static int fg_set_recharge_voltage(struct fg_chip *chip, int voltage_mv)
 	if (voltage_mv == chip->last_recharge_volt_mv)
 		return 0;
 
-	fg_dbg(chip, FG_STATUS, "Setting recharge voltage to %dmV\n",
+	pr_err("Setting recharge voltage to %dmV\n",
 		voltage_mv);
 	fg_encode(chip->sp, FG_SRAM_RECHARGE_VBATT_THR, voltage_mv, &buf);
 	rc = fg_sram_write(chip,
@@ -2198,6 +2231,9 @@ static int fg_adjust_recharge_soc(struct fg_chip *chip)
 static int fg_adjust_recharge_voltage(struct fg_chip *chip)
 {
 	int rc, recharge_volt_mv;
+#if defined(CONFIG_FIH_BATTERY)
+	struct votable *fv_votable;
+#endif /* CONFIG_FIH_BATTERY */
 
 	if (chip->dt.auto_recharge_soc)
 		return 0;
@@ -2208,6 +2244,14 @@ static int fg_adjust_recharge_voltage(struct fg_chip *chip)
 	recharge_volt_mv = chip->dt.recharge_volt_thr_mv;
 
 	/* Lower the recharge voltage in soft JEITA */
+#if defined(CONFIG_FIH_BATTERY)
+	if (chip->dt.recharge_volt_soft_jeita_thr_mv > 0) {
+		fv_votable = find_votable("FV");
+		if (fv_votable && get_effective_result(fv_votable) != chip->bp.float_volt_uv) {
+			recharge_volt_mv = chip->dt.recharge_volt_soft_jeita_thr_mv;
+		}
+	} else
+#endif /* CONFIG_FIH_BATTERY */
 	if (chip->health == POWER_SUPPLY_HEALTH_WARM ||
 			chip->health == POWER_SUPPLY_HEALTH_COOL)
 		recharge_volt_mv -= 200;
@@ -3217,6 +3261,9 @@ wait:
 			BATT_SOC_RESTART(chip), rc);
 		goto out;
 	}
+#if defined(CONFIG_FIH_BATTERY) && defined(BBS_LOG)
+	BBS_FG_RESET();
+#endif /* CONFIG_FIH_BATTERY */
 out:
 	chip->fg_restarting = false;
 	return rc;
@@ -4057,6 +4104,11 @@ static int fg_psy_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_BATTERY_TYPE:
 		pval->strval = fg_get_battery_type(chip);
 		break;
+#if defined(CONFIG_FIH_BATTERY)
+	case POWER_SUPPLY_PROP_MANUFACTURER:
+		pval->strval = chip->bp.batt_mfr_str;
+		break;
+#endif /* CONFIG_FIH_BATTERY */
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
 		pval->intval = chip->bp.float_volt_uv;
 		break;
@@ -4317,6 +4369,9 @@ static enum power_supply_property fg_psy_props[] = {
 	POWER_SUPPLY_PROP_CC_STEP,
 	POWER_SUPPLY_PROP_CC_STEP_SEL,
 	POWER_SUPPLY_PROP_REAL_CAPACITY,
+#if defined(CONFIG_FIH_BATTERY)
+	POWER_SUPPLY_PROP_MANUFACTURER,
+#endif /* CONFIG_FIH_BATTERY */
 };
 
 static const struct power_supply_desc fg_psy_desc = {
@@ -4737,6 +4792,9 @@ static irqreturn_t fg_vbatt_low_irq_handler(int irq, void *data)
 	struct fg_chip *chip = data;
 
 	fg_dbg(chip, FG_IRQ, "irq %d triggered\n", irq);
+#if defined(CONFIG_FIH_BATTERY) && defined(BBS_LOG)
+	BBS_BATTERY_VOLTAGE_LOW();
+#endif /* CONFIG_FIH_BATTERY */
 	return IRQ_HANDLED;
 }
 
@@ -4822,6 +4880,10 @@ static irqreturn_t fg_delta_batt_temp_irq_handler(int irq, void *data)
 
 		chip->last_batt_temp = batt_temp;
 		power_supply_changed(chip->batt_psy);
+#if defined(CONFIG_FIH_BATTERY) && defined(BBS_LOG)
+		if (batt_temp >= 600)
+			BBS_BATTERY_REACH_SHUTDOWN_TEMPERATURE();
+#endif /* CONFIG_FIH_BATTERY */
 	}
 
 	if (abs(chip->last_batt_temp - batt_temp) > 30)
@@ -5373,6 +5435,14 @@ static int fg_parse_dt(struct fg_chip *chip)
 		chip->dt.recharge_volt_thr_mv = DEFAULT_RECHARGE_VOLT_MV;
 	else
 		chip->dt.recharge_volt_thr_mv = temp;
+
+#if defined(CONFIG_FIH_BATTERY)
+	rc = of_property_read_u32(node, "fih,fg-recharge-voltage-soft-jeita", &temp);
+	if (rc < 0)
+		chip->dt.recharge_volt_soft_jeita_thr_mv = -EINVAL;
+	else
+		chip->dt.recharge_volt_soft_jeita_thr_mv = temp;
+#endif /* CONFIG_FIH_BATTERY */
 
 	chip->dt.auto_recharge_soc = of_property_read_bool(node,
 					"qcom,fg-auto-recharge-soc");

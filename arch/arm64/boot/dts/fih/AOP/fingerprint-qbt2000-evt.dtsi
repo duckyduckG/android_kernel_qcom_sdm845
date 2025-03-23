@@ -1,0 +1,15 @@
+/* NOTICE:
+ * Default set <status> be "disabled" in fingerprint_xxx.dtsi,
+ * and set be "okay" by fp_id (fih_fp) when bootloader load device tree.
+ */
+
+&soc {
+	qcom,qbt1000 {
+		status = "disabled";
+		compatible = "qcom,qbt1000";
+		clock-names = "core", "iface";
+		clock-frequency = <25000000>;
+		qcom,ipc-gpio = <&tlmm 121 0>;
+		qcom,finger-detect-gpio = <&pm8998_gpios 5 0>;
+	};
+};

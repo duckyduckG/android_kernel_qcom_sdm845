@@ -184,7 +184,7 @@ static int dp_parser_msm_hdcp_dev(struct dp_parser *parser)
 	return 0;
 }
 
-static int dp_parser_pinctrl(struct dp_parser *parser)
+int dp_parser_pinctrl(struct dp_parser *parser)
 {
 	int rc = 0;
 	struct dp_pinctrl *pinctrl = &parser->pinctrl;

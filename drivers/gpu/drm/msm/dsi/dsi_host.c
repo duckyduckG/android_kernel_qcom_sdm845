@@ -173,6 +173,8 @@ struct msm_dsi_host {
 	bool registered;
 	bool power_on;
 	int irq;
+	u32 dsi_err_status;
+	u32 dsi_err_cnt;
 };
 
 static u32 dsi_get_bpp(const enum mipi_dsi_pixel_format fmt)
@@ -1319,7 +1321,8 @@ static void dsi_err_worker(struct work_struct *work)
 	/* enable dsi error interrupt */
 	dsi_intr_ctrl(msm_host, DSI_IRQ_MASK_ERROR, 1);
 }
-
+extern void fih_awer_cnt_set(char *info);
+extern void fih_awer_status_set(char *info);
 static void dsi_ack_err_status(struct msm_dsi_host *msm_host)
 {
 	u32 status;
@@ -1327,6 +1330,13 @@ static void dsi_ack_err_status(struct msm_dsi_host *msm_host)
 	status = dsi_read(msm_host, REG_DSI_ACK_ERR_STATUS);
 
 	if (status) {
+		msm_host->dsi_err_cnt++;
+		msm_host->dsi_err_status=status;
+		ack_cnt++;
+		sprintf(page_cnt, "0x%x\n",msm_host->dsi_err_cnt);
+		sprintf(page_status, "0x%x\n",msm_host->dsi_err_status);
+		fih_awer_cnt_set(page_cnt);
+		fih_awer_status_set(page_status);
 		dsi_write(msm_host, REG_DSI_ACK_ERR_STATUS, status);
 		/* Writing of an extra 0 needed to clear error bits */
 		dsi_write(msm_host, REG_DSI_ACK_ERR_STATUS, 0);

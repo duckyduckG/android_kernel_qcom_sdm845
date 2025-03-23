@@ -1,0 +1,16 @@
+&qupv3_se0_i2c {
+	status = "okay";
+	/*
+	* DW7912 slave address is 0x59(7bit) as default.
+	* If you want change to another address, you can use CSB and SDO pin.
+	*/
+	dw7912_vibrator: dw7912@59 {
+		compatible = "dwanatech,dw7912";
+		reg = <0x59>;
+		//use_en_pin = <0>; /* 1 = use en pin, 0 = do not use en pin */
+		/* gpx0_0, set to output mode(0x1), en pin is active high*/
+		pintctrl-names = "default";
+                pintctrl-0 = <&pmi8998_gpio5_default>;
+		dw7912,en-gpio = <&pmi8998_gpios 5 GPIO_ACTIVE_HIGH>;
+        };
+};

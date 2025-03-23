@@ -10,6 +10,8 @@
 
 /* V4L event which user space will subscribe to */
 #define CAM_SYNC_V4L_EVENT                       (V4L2_EVENT_PRIVATE_START + 0)
+#define CAM_LIGHT_CCB_V4L_EVENT                  (V4L2_EVENT_PRIVATE_START + 1)
+
 
 /* Specific event ids to get notified in user space */
 #define CAM_SYNC_V4L_EVENT_ID_CB_TRIG            0
@@ -117,7 +119,7 @@ struct cam_private_ioctl_arg {
 	__u32 size;
 	__u32 result;
 	__u32 reserved;
-	__u64 ioctl_ptr;
+	__user __u64 ioctl_ptr;
 };
 
 #define CAM_PRIVATE_IOCTL_CMD \

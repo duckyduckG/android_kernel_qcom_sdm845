@@ -1,0 +1,208 @@
+
+#include "dsi-panel-lgd-sw43402-dsc-wqhd-cmd.dtsi"
+#include "dsi-panel-lgd-ea9151-dsc-wqhd-cmd.dtsi"
+
+
+&pm8998_l22{
+	qcom,init-voltage = <3000000>;
+};
+
+
+&dsi_nt35597_truly_dsc_cmd_display {
+/delete-property/qcom,dsi-display-active;
+};
+
+
+&sdm845_gpio43_active{
+	mux {
+		pins = "gpio43","gpio133";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio43","gpio133";
+		drive-strength = <8>;
+		bias-disable;
+	};
+};
+
+&sdm845_gpio43_sleep{
+	mux {
+		pins = "gpio43","gpio133";
+		function = "gpio";
+	};
+
+	config {
+		pins = "gpio43","gpio133";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+};
+
+&soc {
+	dsi_panel_pwr_supply_vddio_no_labibb: dsi_panel_pwr_supply_vddio_no_labibb {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		qcom,panel-supply-entry@0 {
+			reg = <0>;
+			qcom,supply-name = "vddio";
+			qcom,supply-min-voltage = <1800000>;
+			qcom,supply-max-voltage = <1800000>;
+			qcom,supply-enable-load = <62000>;
+			qcom,supply-disable-load = <80>;
+			qcom,supply-post-on-sleep = <20>;
+		};
+
+		qcom,panel-supply-entry@1 {
+			reg = <1>;
+			qcom,supply-name = "wqhd-vddio";
+			qcom,supply-min-voltage = <3000000>;
+			qcom,supply-max-voltage = <3000000>;
+			qcom,supply-enable-load = <857000>;
+			qcom,supply-disable-load = <80>;
+			qcom,supply-post-on-sleep = <20>;
+			qcom,supply-post-off-sleep = <5>;
+		};
+	};
+
+	dsi_lgd_sw43402_wqhd_oled_cmd_display: qcom,dsi-display@14 {
+		compatible = "qcom,dsi-display";
+		label = "dsi_lgd_sw43402_wqhd_oled_cmd_display";
+		qcom,display-type = "primary";
+
+		qcom,dsi-ctrl = <&mdss_dsi0>;
+		qcom,dsi-phy = <&mdss_dsi_phy0>;
+		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
+			   <&mdss_dsi0_pll PCLK_MUX_0_CLK>;
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
+
+		pinctrl-names = "panel_active", "panel_suspend";
+		pinctrl-0 = <&sdm845_gpio6_active &sdm845_gpio10_active>;
+		pinctrl-1 = <&sdm845_gpio6_sleep &sdm845_gpio10_sleep>;
+		qcom,platform-te-gpio = <&tlmm 10 0>;
+		qcom,platform-reset-gpio = <&tlmm 6 0>;
+
+		qcom,dsi-panel = <&dsi_lgd_sw43402_wqhd_dsc_cmd>;
+		vddio-supply = <&pm8998_l14>;
+		wqhd-vddio-supply = <&pm8998_l22>;
+   };
+
+   dsi_lgd_ea9151_wqhd_oled_cmd_display: qcom,dsi-display@15 {
+		compatible = "qcom,dsi-display";
+		label = "dsi_lgd_ea9151_wqhd_oled_cmd_display";
+		qcom,display-type = "primary";
+
+		qcom,dsi-ctrl = <&mdss_dsi0>;
+		qcom,dsi-phy = <&mdss_dsi_phy0>;
+		clocks = <&mdss_dsi0_pll BYTECLK_MUX_0_CLK>,
+			<&mdss_dsi0_pll PCLK_MUX_0_CLK>;
+		clock-names = "mux_byte_clk", "mux_pixel_clk";
+
+		pinctrl-names = "panel_active", "panel_suspend";
+		pinctrl-0 = <&sdm845_gpio6_active &sdm845_gpio10_active>;
+		pinctrl-1 = <&sdm845_gpio6_sleep &sdm845_gpio10_sleep>;
+		qcom,platform-te-gpio = <&tlmm 10 0>;
+		qcom,platform-reset-gpio = <&tlmm 6 0>;
+
+		qcom,dsi-panel = <&dsi_lgd_ea9151_wqhd_dsc_cmd>;
+		vddio-supply = <&pm8998_l14>;
+		wqhd-vddio-supply = <&pm8998_l22>;
+  };
+
+};
+
+&sde_dp {
+	pinctrl-0 = <&sdm845_gpio43_active &sdm845_gpio38_active>;
+	pinctrl-1 = <&sdm845_gpio43_sleep &sdm845_gpio38_sleep >;
+	qcom,aux-en-gpio = <&tlmm 43 0>;
+	qcom,usbplug-cc-gpio = <&tlmm 38 0>;
+	qcom,aux-sel-gpio = <&tlmm 133 0>;
+};
+
+
+&dsi_lgd_sw43402_wqhd_dsc_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_vddio_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <255>;
+	qcom,platform-reset-gpio = <&tlmm 6 0>;
+	qcom,platform-te-gpio = <&tlmm 10 0>;
+	qcom,mdss-dsi-t-clk-post = <11>;
+	qcom,mdss-dsi-t-clk-pre = <35>;
+	qcom,mdss-dsi-display-timings {
+		timing@0{
+			qcom,mdss-dsi-panel-phy-timings = [00 15 05 05 20 1f 05
+				05 03 03 04 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_lgd_ea9151_wqhd_dsc_cmd {
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_vddio_no_labibb>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-dsi-bl-min-level = <3>;
+	qcom,mdss-dsi-bl-max-level = <997>;
+	qcom,platform-reset-gpio = <&tlmm 6 0>;
+	qcom,platform-te-gpio = <&tlmm 10 0>;
+	qcom,mdss-dsi-t-clk-post = <13>;
+	qcom,mdss-dsi-t-clk-pre = <45>;
+
+//	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "te_signal_check";
+
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
+	qcom,mdss-dsi-panel-status-value = <0x9c>;
+	qcom,mdss-dsi-panel-on-check-value = <0x9c>;
+	qcom,mdss-dsi-panel-status-read-length = <1>;
+
+	qcom,reg-check-enabled;
+	qcom,mdss-dsi-panel-status-read-ddic-reg-length = <255>;
+
+	qcom,mdss-dsi-display-timings {
+		timing@0{
+			qcom,mdss-dsi-panel-phy-timings = [00 1C 08 07 23 22 07
+				07 05 03 04 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_lgd_sw43402_wqhd_oled_cmd_display{
+        qcom,dsi-display-active;
+};
+
+&dsi_sim_vid {
+	qcom,mdss-dsi-bl-pmic-control-type="bl_ctrl_dcs";
+	qcom,mdss-dsi-display-timings{
+		timing@0{
+			qcom,mdss-dsi-panel-width = <1440>;
+			qcom,mdss-dsi-panel-height = <2880>;
+		};
+	};
+};
+
+&mdss_dsi0_pll{
+/delete-property/qcom,dsi-pll-ssc-en;
+/delete-property/qcom,dsi-pll-ssc-mode;
+};
+
+&mdss_dsi1_pll{
+/delete-property/qcom,dsi-pll-ssc-en;
+/delete-property/qcom,dsi-pll-ssc-mode;
+};
+
+
+&mdss_dsi_phy0{
+		qcom,platform-strength-ctrl = [66 03
+						66 03
+						66 03
+						66 03
+						66 00];
+};
+
+

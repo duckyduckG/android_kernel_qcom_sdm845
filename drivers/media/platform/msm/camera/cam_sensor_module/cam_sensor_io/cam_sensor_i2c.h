@@ -154,6 +154,11 @@ int32_t cam_qup_i2c_poll(struct i2c_client *client,
 	enum camera_sensor_i2c_type data_type,
 	uint32_t delay_ms);
 
+
+int32_t cam_qup_i2c_write_seq_light(struct camera_io_master *client,
+        uint32_t addr,  enum camera_sensor_i2c_type addr_type,
+        uint8_t *data, uint32_t num_byte);
+
 /**
  * cam_qup_i2c_write_table : QUP based I2C write random
  * @client        : QUP I2C client structure

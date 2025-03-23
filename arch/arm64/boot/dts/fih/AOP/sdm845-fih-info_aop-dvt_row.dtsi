@@ -1,0 +1,11 @@
+&soc {
+	fih_info {
+		compatible = "fih_info";
+		status = "ok";
+		fih-info,devmodel = "AOP";
+		fih-info,baseband = "3.1W";
+		fih-info,bandinfo = "G_850_900_1800_1900^W_1_2_4_5_8^L_1_2_3_4_5_7_8_12_13_17_20_28_32_38_39_40_41_66";
+		fih-info,hwmodel  = "AOP";
+		fih-info,simslot  = "2";
+	};
+};

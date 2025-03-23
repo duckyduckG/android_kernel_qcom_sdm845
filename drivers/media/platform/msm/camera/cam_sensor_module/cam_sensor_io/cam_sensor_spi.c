@@ -260,6 +260,8 @@ int cam_spi_read(struct camera_io_master *client,
 		addr_type, data_type, NULL, NULL);
 	if (rc < 0) {
 		CAM_ERR(CAM_SENSOR, "failed %d", rc);
+		printk("BBox;%s:spi read fail\n", __func__);
+		printk("BBox::UEC;44::1\n");
 		return rc;
 	}
 
@@ -481,6 +483,8 @@ NOMEM:
 	return -ENOMEM;
 ERROR:
 	CAM_ERR(CAM_SENSOR, "error write");
+	printk("BBox;%s:spi write error\n", __func__);
+	printk("BBox::UEC;44::1\n");
 OUT:
 	kfree(tx);
 	return rc;

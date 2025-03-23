@@ -34,6 +34,11 @@
 
 #include "power.h"
 
+#include <linux/gpio.h>
+
+extern int slst_gpio_base_id;
+#define PROC_AWAKE_ID 12 /* 12th bit */
+
 const char *pm_labels[] = { "mem", "standby", "freeze", NULL };
 const char *pm_states[PM_SUSPEND_MAX];
 
@@ -571,7 +576,11 @@ int pm_suspend(suspend_state_t state)
 		return -EINVAL;
 
 	pm_suspend_marker("entry");
+	gpio_set_value(slst_gpio_base_id + PROC_AWAKE_ID, 0);
+	pr_err("%s: PM_SUSPEND_PREPARE smp2p_change_state", __func__);
 	error = enter_state(state);
+	gpio_set_value(slst_gpio_base_id + PROC_AWAKE_ID, 1);
+	pr_err("%s: PM_POST_SUSPEND smp2p_change_state", __func__);
 	if (error) {
 		suspend_stats.fail++;
 		dpm_save_failed_errno(error);

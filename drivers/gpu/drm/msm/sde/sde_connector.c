@@ -24,6 +24,10 @@
 #include "sde_crtc.h"
 #include "sde_rm.h"
 
+#ifdef CONFIG_DRM_DSI_CUSTOMIZE
+#include "dsi_customize_debug.h"
+#endif
+
 #define BL_NODE_NAME_SIZE 32
 
 /* Autorefresh will occur after FRAME_CNT frames. Large values are unlikely */
@@ -1674,7 +1678,9 @@ static int sde_connector_init_debugfs(struct drm_connector *connector)
 			return -ENOMEM;
 		}
 	}
-
+#ifdef CONFIG_DRM_DSI_CUSTOMIZE
+	sde_connector_init_customize_debugfs(connector);
+#endif
 	return 0;
 }
 #else

@@ -620,7 +620,7 @@
 			<&clock_camcc CAM_CC_CAMNOC_AXI_CLK>,
 			<&clock_camcc CAM_CC_IFE_0_AXI_CLK>;
 		clock-rates =
-			<0 0 0 0 0 0 384000000 0 0 0 404000000 0 0>,
+			<0 0 0 0 0 0 538000000 0 0 0 600000000 0 0>,
 			<0 0 0 0 0 0 538000000 0 0 0 600000000 0 0>;
 		clock-cntl-level = "svs", "turbo";
 		src-clock-name = "ife_csid_clk_src";
@@ -708,7 +708,7 @@
 			<&clock_camcc CAM_CC_CAMNOC_AXI_CLK>,
 			<&clock_camcc CAM_CC_IFE_1_AXI_CLK>;
 		clock-rates =
-			<0 0 0 0 0 0 384000000 0 0 0 404000000 0 0>,
+			<0 0 0 0 0 0 538000000 0 0 0 600000000 0 0>,
 			<0 0 0 0 0 0 538000000 0 0 0 600000000 0 0>;
 		clock-cntl-level = "svs", "turbo";
 		src-clock-name = "ife_csid_clk_src";

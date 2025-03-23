@@ -52,6 +52,17 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/ufs.h>
 
+#ifdef CONFIG_FIH_UFS
+#include <fih/fih_ufs.h>
+/* BBS Log for UFS */
+#define BBOX_UFS_INIT_PWR_REG_FAIL	 	do {printk("BBox;%s: Initialize Power Regulator Failure \n", __func__);	printk("BBox::UEC;52::0\n");} while (0);
+#define BBOX_UFS_REQUEST_IRQ_FAIL 		do {printk("BBox;%s: Request IRQ Failure \n", __func__); 								printk("BBox::UEC;52::1\n");} while (0);
+#define BBOX_UFS_ENABLE_HOST_FAIL 		do {printk("BBox;%s: Enable Host controller Failure \n", __func__);			printk("BBox::UEC;52::2\n");} while (0);
+#define BBOX_UFS_SET_CLK_FAIL 				do {printk("BBox;%s:Set Clock Failure \n", __func__);										printk("BBox::UEC;52::3\n");} while (0);
+#define BBOX_UFS_CTRL_UIC_PWR_FAIL 		do {printk("BBox;%s:Control UIC Power Failure \n", __func__);						printk("BBox::UEC;52::4\n");} while (0);
+#define BBOX_UFS_INIT_UNIPRO_LINK_STARTUP_FAIL do {printk("BBox;%s:Initialize unipro link startup Failure \n", __func__); printk("BBox::UEC;52::5\n");} while (0);
+#endif
+
 #ifdef CONFIG_DEBUG_FS
 
 static int ufshcd_tag_req_type(struct request *rq)
@@ -780,7 +791,7 @@ static void ufshcd_print_clk_freqs(struct ufs_hba *hba)
 	list_for_each_entry(clki, head, list) {
 		if (!IS_ERR_OR_NULL(clki->clk) && clki->min_freq &&
 				clki->max_freq)
-			dev_err(hba->dev, "clk: %s, rate: %u\n",
+			dev_err(hba->dev, "BBox;UFS: clk: %s, rate: %u\n",
 					clki->name, clki->curr_freq);
 	}
 }
@@ -816,15 +827,19 @@ static inline void __ufshcd_print_host_regs(struct ufs_hba *hba, bool no_sleep)
 	 * that IORESOURCE_MEM flag is on when xxx_get_resource() is invoked
 	 * during platform/pci probe function.
 	 */
+#ifdef CONFIG_FIH_UFS
+	dev_err(hba->dev, "BBox;UFS: =========== UFSHCD DUMP (%s)===========\n", __func__);
+#endif
+
 	ufshcd_hex_dump(hba, "host regs", hba->mmio_base,
 			UFSHCI_REG_SPACE_SIZE);
-	dev_err(hba->dev, "hba->ufs_version = 0x%x, hba->capabilities = 0x%x",
+	dev_err(hba->dev, "BBox;UFS: hba->ufs_version = 0x%x, hba->capabilities = 0x%x",
 		hba->ufs_version, hba->capabilities);
 	dev_err(hba->dev,
-		"hba->outstanding_reqs = 0x%x, hba->outstanding_tasks = 0x%x",
+		"BBox;UFS: hba->outstanding_reqs = 0x%x, hba->outstanding_tasks = 0x%x",
 		(u32)hba->outstanding_reqs, (u32)hba->outstanding_tasks);
 	dev_err(hba->dev,
-		"last_hibern8_exit_tstamp at %lld us, hibern8_exit_cnt = %d",
+		"BBox;UFS: last_hibern8_exit_tstamp at %lld us, hibern8_exit_cnt = %d",
 		ktime_to_us(hba->ufs_stats.last_hibern8_exit_tstamp),
 		hba->ufs_stats.hibern8_exit_cnt);
 
@@ -1428,6 +1443,9 @@ static int ufshcd_set_clk_freq(struct ufs_hba *hba, bool scale_up)
 					dev_err(hba->dev, "%s: %s clk set rate(%dHz) failed, %d\n",
 						__func__, clki->name,
 						clki->max_freq, ret);
+#ifdef CONFIG_FIH_UFS
+				BBOX_UFS_SET_CLK_FAIL;
+#endif
 					break;
 				}
 				trace_ufshcd_clk_scaling(dev_name(hba->dev),
@@ -1445,6 +1463,9 @@ static int ufshcd_set_clk_freq(struct ufs_hba *hba, bool scale_up)
 					dev_err(hba->dev, "%s: %s clk set rate(%dHz) failed, %d\n",
 						__func__, clki->name,
 						clki->min_freq, ret);
+#ifdef CONFIG_FIH_UFS
+					BBOX_UFS_SET_CLK_FAIL;
+#endif
 					break;
 				}
 				trace_ufshcd_clk_scaling(dev_name(hba->dev),
@@ -3913,6 +3934,11 @@ int ufshcd_map_desc_id_to_length(struct ufs_hba *hba,
 	case QUERY_DESC_IDN_RFU_1:
 		*desc_len = 0;
 		break;
+#ifdef CONFIG_FIH_UFS
+	case QUERY_DESC_IDN_DEVICE_HEALTH:
+		*desc_len = hba->desc_size.dev_health_desc;
+		break;
+#endif
 	default:
 		*desc_len = 0;
 		return -EINVAL;
@@ -4120,6 +4146,18 @@ static inline int ufshcd_read_unit_desc_param(struct ufs_hba *hba,
 	return ufshcd_read_desc_param(hba, QUERY_DESC_IDN_UNIT, lun,
 				      param_offset, param_read_buf, param_size);
 }
+
+#ifdef CONFIG_FIH_UFS
+int ufshcd_read_geometry_desc(struct ufs_hba *hba, u8 *buf, u32 size)
+{
+	return ufshcd_read_desc(hba, QUERY_DESC_IDN_GEOMETRY, 0, buf, size);
+}
+
+int ufshcd_read_device_health_desc(struct ufs_hba *hba, u8 *buf, u32 size)
+{
+	return ufshcd_read_desc(hba, QUERY_DESC_IDN_DEVICE_HEALTH, 0, buf, size);
+}
+#endif
 
 /**
  * ufshcd_memory_alloc - allocate memory for host memory space data structures
@@ -4538,6 +4576,9 @@ static int ufshcd_uic_pwr_ctrl(struct ufs_hba *hba, struct uic_command *cmd)
 
 out:
 	if (ret) {
+#ifdef CONFIG_FIH_UFS
+		BBOX_UFS_CTRL_UIC_PWR_FAIL;
+#endif
 		ufsdbg_set_err_state(hba);
 		ufshcd_print_host_state(hba);
 		ufshcd_print_pwr_info(hba);
@@ -5291,6 +5332,10 @@ link_startup:
 
 	ret = ufshcd_make_hba_operational(hba);
 out:
+#ifdef CONFIG_FIH_UFS
+	if (ret)
+		BBOX_UFS_INIT_UNIPRO_LINK_STARTUP_FAIL;
+#endif
 	if (ret)
 		dev_err(hba->dev, "link startup failed %d\n", ret);
 	/*
@@ -5694,6 +5739,9 @@ ufshcd_transfer_rsp_status(struct ufs_hba *hba, struct ufshcd_lrb *lrbp)
 	case OCS_GENERAL_CRYPTO_ERROR:
 	default:
 		result |= DID_ERROR << 16;
+#ifdef CONFIG_FIH_UFS
+		printk("BBox::UPD;98::%d::%d\n", ocs, lrbp->task_tag);
+#endif
 		dev_err(hba->dev,
 				"OCS error from controller = %x for tag %d\n",
 				ocs, lrbp->task_tag);
@@ -6435,6 +6483,7 @@ static void ufshcd_err_handler(struct work_struct *work)
 	    UFS_DEVICE_QUIRK_RECOVERY_FROM_DL_NAC_ERRORS) {
 		bool ret;
 
+		printk("BBox;UFS: trigger ufshcd_quirk_dl_nac_errors by UFS_DEVICE_QUIRK_RECOVERY_FROM_DL_NAC_ERRORS\n");
 		spin_unlock_irqrestore(hba->host->host_lock, flags);
 		/* release the lock as ufshcd_quirk_dl_nac_errors() may sleep */
 		ret = ufshcd_quirk_dl_nac_errors(hba);
@@ -8002,6 +8051,13 @@ static void ufshcd_init_desc_sizes(struct ufs_hba *hba)
 		&hba->desc_size.geom_desc);
 	if (err)
 		hba->desc_size.geom_desc = QUERY_DESC_GEOMETRY_DEF_SIZE;
+
+#ifdef CONFIG_FIH_UFS
+	err = ufshcd_read_desc_length(hba, QUERY_DESC_IDN_DEVICE_HEALTH, 0,
+		&hba->desc_size.dev_health_desc);
+	if (err)
+		hba->desc_size.dev_health_desc = QUERY_DESC_DEVICE_HEALTH_DEF_SIZE;
+#endif
 }
 
 static void ufshcd_def_desc_sizes(struct ufs_hba *hba)
@@ -8012,6 +8068,9 @@ static void ufshcd_def_desc_sizes(struct ufs_hba *hba)
 	hba->desc_size.conf_desc = QUERY_DESC_CONFIGURATION_DEF_SIZE;
 	hba->desc_size.unit_desc = QUERY_DESC_UNIT_DEF_SIZE;
 	hba->desc_size.geom_desc = QUERY_DESC_GEOMETRY_DEF_SIZE;
+#ifdef CONFIG_FIH_UFS
+	hba->desc_size.dev_health_desc = QUERY_DESC_DEVICE_HEALTH_DEF_SIZE;
+#endif
 }
 
 /**
@@ -8024,6 +8083,16 @@ static int ufshcd_probe_hba(struct ufs_hba *hba)
 {
 	int ret;
 	ktime_t start = ktime_get();
+#ifdef CONFIG_FIH_UFS
+	u8 geometry_desc_buf[QUERY_DESC_GEOMETRY_DEF_SIZE] = {0};
+	char buf[FIH_UFSINFO_SIZE] = {0};
+	char manufactureid[FIH_UFSINFO_SIZE] = {0};
+	u64 qTotalRawDeviceCapacity = 0;
+	u64 max_sector_count = 0;
+	u64 total_sector = 0;
+	u8 str_desc_buf[QUERY_DESC_MAX_SIZE + 1];
+	char model[MAX_MODEL_LEN + 1] = {0};
+#endif
 
 	ret = ufshcd_link_startup(hba);
 	if (ret)
@@ -8057,6 +8126,49 @@ static int ufshcd_probe_hba(struct ufs_hba *hba)
 	/* Init check for device descriptor sizes */
 	ufshcd_init_desc_sizes(hba);
 	ufs_advertise_fixup_device(hba);
+#ifdef CONFIG_FIH_UFS
+	/* Copy from ufs_quirk.c */
+	memset(str_desc_buf, 0, QUERY_DESC_MAX_SIZE);
+	ufshcd_read_string_desc(hba, hba->dev_info.i_product_name,
+			str_desc_buf, QUERY_DESC_MAX_SIZE, ASCII_STD);
+
+	str_desc_buf[QUERY_DESC_MAX_SIZE] = '\0';
+	strlcpy(model, (str_desc_buf + QUERY_DESC_HDR_SIZE),
+		min_t(u8, str_desc_buf[QUERY_DESC_LENGTH_OFFSET],
+		      MAX_MODEL_LEN));
+	/* Null terminate the model string */
+	model[MAX_MODEL_LEN] = '\0';
+
+	ufshcd_read_geometry_desc(hba, geometry_desc_buf, QUERY_DESC_GEOMETRY_DEF_SIZE);
+
+	/* endian transform */
+	qTotalRawDeviceCapacity = (u64)geometry_desc_buf[4] << 56 |
+				  (u64)geometry_desc_buf[5] << 48 |
+				  (u64)geometry_desc_buf[6] << 40 |
+				  (u64)geometry_desc_buf[7] << 32 |
+				  (u64)geometry_desc_buf[8] << 24 |
+				  (u64)geometry_desc_buf[9] << 16 |
+				  (u64)geometry_desc_buf[10] << 8 |
+				  (u64)geometry_desc_buf[11];
+
+	dev_info(hba->dev, "qTotalRawDeviceCapacity: %llu\n", qTotalRawDeviceCapacity);
+
+	max_sector_count = 1 << 21; /* 1GB --> 1024*1024*2 sector */
+	total_sector = qTotalRawDeviceCapacity;
+	while (max_sector_count < total_sector) {
+		max_sector_count = max_sector_count << 1;
+	}
+
+	switch (hba->dev_info.w_manufacturer_id) {
+		case UFS_VENDOR_TOSHIBA: sprintf(manufactureid, "Toshiba"); break;
+		case UFS_VENDOR_SAMSUNG: sprintf(manufactureid, "Samsung"); break;
+		case UFS_VENDOR_SKHYNIX: sprintf(manufactureid, "SKHynix"); break;
+		default: sprintf(manufactureid, "Unknown"); break;
+	}
+	sprintf(buf, "%s 0x%x %lluG 0x00\n", manufactureid, hba->ufs_version, (max_sector_count >> 21));
+	printk("BBox::UPD;102::%s %s 0x%x\n", manufactureid, model, hba->ufs_version);
+	fih_ufs_setup(buf);
+#endif
 	ufshcd_tune_unipro_params(hba);
 
 	ufshcd_apply_pm_quirks(hba);
@@ -9008,6 +9120,9 @@ static int ufshcd_init_clocks(struct ufs_hba *hba)
 			ret = PTR_ERR(clki->clk);
 			dev_err(dev, "%s: %s clk get failed, %d\n",
 					__func__, clki->name, ret);
+#ifdef CONFIG_FIH_UFS
+			BBOX_UFS_SET_CLK_FAIL;
+#endif
 			goto out;
 		}
 
@@ -9017,6 +9132,9 @@ static int ufshcd_init_clocks(struct ufs_hba *hba)
 				dev_err(hba->dev, "%s: %s clk set rate(%dHz) failed, %d\n",
 					__func__, clki->name,
 					clki->max_freq, ret);
+#ifdef CONFIG_FIH_UFS
+				BBOX_UFS_SET_CLK_FAIL;
+#endif
 				goto out;
 			}
 			clki->curr_freq = clki->max_freq;
@@ -9100,6 +9218,10 @@ out_disable_clks:
 out_disable_hba_vreg:
 	ufshcd_setup_hba_vreg(hba, false);
 out:
+#ifdef CONFIG_FIH_UFS
+	if (err)
+		BBOX_UFS_INIT_PWR_REG_FAIL;
+#endif
 	return err;
 }
 
@@ -10736,6 +10858,9 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 				dev_name(dev), hba);
 	if (err) {
 		dev_err(hba->dev, "request irq failed\n");
+#ifdef CONFIG_FIH_UFS
+		BBOX_UFS_REQUEST_IRQ_FAIL;
+#endif
 		goto exit_gating;
 	} else {
 		hba->is_irq_enabled = true;
@@ -10760,6 +10885,9 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	err = ufshcd_hba_enable(hba);
 	if (err) {
 		dev_err(hba->dev, "Host controller enable failed\n");
+#ifdef CONFIG_FIH_UFS
+		BBOX_UFS_ENABLE_HOST_FAIL;
+#endif
 		ufshcd_print_host_regs(hba);
 		ufshcd_print_host_state(hba);
 		goto out_remove_scsi_host;

@@ -256,6 +256,9 @@ struct ufs_desc_size {
 	int interc_desc;
 	int unit_desc;
 	int conf_desc;
+#ifdef CONFIG_FIH_UFS
+	int dev_health_desc;
+#endif
 };
 
 /**
@@ -565,6 +568,9 @@ struct debugfs_files {
 	struct fault_attr fail_attr;
 #endif
 	bool is_sys_suspended;
+#ifdef CONFIG_FIH_UFS
+	struct dentry * dump_device_health_desc;
+#endif
 };
 
 /* tag stats statistics types */
@@ -870,6 +876,7 @@ struct ufs_hba {
 	struct mutex uic_cmd_mutex;
 	struct completion *uic_async_done;
 
+	struct mutex h8_dev_cmd_mutex;
 	u32 ufshcd_state;
 	u32 eh_flags;
 	u32 intr_mask;
@@ -1199,6 +1206,11 @@ out:
 }
 
 int ufshcd_read_device_desc(struct ufs_hba *hba, u8 *buf, u32 size);
+
+#ifdef CONFIG_FIH_UFS
+int ufshcd_read_geometry_desc(struct ufs_hba *hba, u8 *buf, u32 size);
+int ufshcd_read_device_health_desc(struct ufs_hba *hba, u8 *buf, u32 size);
+#endif
 
 static inline bool ufshcd_is_hs_mode(struct ufs_pa_layer_attr *pwr_info)
 {

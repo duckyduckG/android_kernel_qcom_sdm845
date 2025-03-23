@@ -1,0 +1,17 @@
+#
+# Configuration for Fingerprint
+#
+menuconfig INPUT_FINGERPRINT
+        bool "Fingerprints"
+        help
+          Say Y here, and a list of supported fingerprints will be displayed.
+
+if INPUT_FINGERPRINT
+
+config INPUT_EGIS
+        bool "EGIS fingerprint Driver"
+        default n
+        help
+          This is a EGIS fingerprint Driver.
+
+endif

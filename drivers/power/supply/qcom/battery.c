@@ -513,7 +513,11 @@ static void get_fcc_stepper_params(struct pl_data *chip, int main_fcc_ua,
 }
 
 #define MINIMUM_PARALLEL_FCC_UA		500000
+#if defined(CONFIG_FIH_BATTERY)
+#define PL_TAPER_WORK_DELAY_MS		2000
+#else
 #define PL_TAPER_WORK_DELAY_MS		500
+#endif /* CONFIG_FIH_BATTERY */
 #define TAPER_RESIDUAL_PCT		90
 #define TAPER_REDUCTION_UA		200000
 static void pl_taper_work(struct work_struct *work)
@@ -526,6 +530,9 @@ static void pl_taper_work(struct work_struct *work)
 	int total_fcc_ua, master_fcc_ua, slave_fcc_ua = 0;
 
 	chip->taper_entry_fv = get_effective_result(chip->fv_votable);
+#if defined(CONFIG_FIH_BATTERY)
+	pr_err("initial taper_entry_fv=%d\n", chip->taper_entry_fv);
+#endif /* CONFIG_FIH_BATTERY */
 	chip->taper_work_running = true;
 	while (true) {
 		if (get_effective_result(chip->pl_disable_votable)) {
@@ -538,11 +545,11 @@ static void pl_taper_work(struct work_struct *work)
 			get_fcc_split(chip, total_fcc_ua, &master_fcc_ua,
 					&slave_fcc_ua);
 			if (slave_fcc_ua <= MINIMUM_PARALLEL_FCC_UA) {
-				pl_dbg(chip, PR_PARALLEL, "terminating: parallel's share is low\n");
+				pr_err("terminating: parallel's share is low\n");
 				vote(chip->pl_disable_votable, TAPER_END_VOTER,
 						true, 0);
 			} else {
-				pl_dbg(chip, PR_PARALLEL, "terminating: parallel disabled\n");
+				pr_err("terminating: parallel disabled\n");
 			}
 			goto done;
 		}
@@ -567,10 +574,16 @@ static void pl_taper_work(struct work_struct *work)
 				goto done;
 			}
 
-			pl_dbg(chip, PR_PARALLEL, "master is taper charging; reducing FCC to %dua\n",
+			pr_err("master is taper charging; reducing FCC to %dua\n",
 					eff_fcc_ua);
 			vote(chip->fcc_votable, TAPER_STEPPER_VOTER,
 					true, eff_fcc_ua);
+#if defined(CONFIG_FIH_BATTERY)
+			if (get_effective_result(chip->fv_votable) < chip->taper_entry_fv) {
+				chip->taper_entry_fv = get_effective_result(chip->fv_votable);
+				pr_err("update taper_entry_fv=%d\n", chip->taper_entry_fv);
+			}
+#endif /* CONFIG_FIH_BATTERY */
 		} else {
 			/*
 			 * Due to reduction of float voltage in JEITA condition
@@ -586,7 +599,7 @@ static void pl_taper_work(struct work_struct *work)
 			 */
 			if (get_effective_result(chip->fv_votable) >
 						chip->taper_entry_fv) {
-				pl_dbg(chip, PR_PARALLEL, "Float voltage increased. Exiting taper\n");
+				pr_err("Float voltage increased. Exiting taper\n");
 				goto done;
 			} else {
 				pl_dbg(chip, PR_PARALLEL, "master is fast charging; waiting for next taper\n");

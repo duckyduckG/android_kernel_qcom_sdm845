@@ -1,0 +1,54 @@
+#include "sdm845-fih-info_aop-evb.dtsi"
+
+/* Pinctrl */
+#include "sdm845-pinctrl_aop-evb.dtsi"
+#include "pm845-pinctrl_aop-evb.dtsi"
+#include "pmi8998-pinctrl_aop-evb.dtsi"
+#include "pm8005-pinctrl_aop-evb.dtsi"
+
+#include "sdm845-platform_aop-evb.dtsi"
+#include "sdm845-pmic_aop-evb.dtsi"
+
+/* Battery */
+#include "battery-evb.dtsi"
+
+/* Touch */
+#include "touch_fts.dtsi"
+#include "touch_atmel.dtsi"
+#include "touch_atmel_evk.dtsi"
+
+/* Display */
+#include "display.dtsi"
+
+/* Haptics */
+#include "haptics-dw7912-evb.dtsi"
+
+/* ASIC Flash */
+#include "asic-flash_aop-evb.dtsi"
+
+/* NFC */
+#include "nfc_nq_nci.dtsi"
+
+/* Audio */
+#include "sdm845-audio_aop-evb.dtsi"
+
+/* Gyro */
+#include "gyro_bmi160.dtsi"
+
+/* Hall sensor */
+#include "hall-ah1902-evb.dtsi"
+
+/* Switch */
+#include "switch-ts3a5018_aop-evb.dtsi"
+
+/* LIGHT Camera */
+#include "sdm845-light-camera.dtsi"
+
+/* Fingerprint */
+#include "fingerprint-gf5288-evb.dtsi"
+
+/* Wifi */
+#include "wifi-module-evb.dtsi"
+
+/* Proximity */
+#include "alsp_cm36656.dtsi"
