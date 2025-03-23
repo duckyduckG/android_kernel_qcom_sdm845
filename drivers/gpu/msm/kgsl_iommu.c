@@ -256,7 +256,6 @@ static void kgsl_iommu_add_global(struct kgsl_mmu *mmu,
 	}
 
 	if (WARN_ON(start < 0))
->>>>>>> 89dbbfd116a8f05bc2cc7fd28bb4c123aee8b388
 		return;
 
 	memdesc->gpuaddr =
