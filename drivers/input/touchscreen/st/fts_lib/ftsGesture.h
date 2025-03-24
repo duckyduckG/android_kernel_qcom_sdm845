@@ -20,6 +20,7 @@
 
 
 #include "ftsHardware.h"
+#include <linux/types.h>
 
 #define GESTURE_MASK_SIZE       8
 

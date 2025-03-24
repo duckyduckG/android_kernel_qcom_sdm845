@@ -12,7 +12,7 @@
 **************************************************************************
 
 */
-
+#include <linux/types.h>
 
 //FIRST LEVEL ERROR CODE
 #define OK                              (int)0x00000000                         //No ERROR
