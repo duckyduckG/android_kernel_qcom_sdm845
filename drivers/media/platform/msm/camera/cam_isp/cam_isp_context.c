@@ -449,23 +449,7 @@ static int __cam_isp_ctx_handle_buf_done_in_activated_state(
 			req_isp->num_fence_map_out);
 		WARN_ON(req_isp->num_acked > req_isp->num_fence_map_out);
 	}
-
-	if (req_isp->num_acked != req_isp->num_fence_map_out)
-		return rc;
-
-	ctx_isp->active_req_cnt--;
-
-	if (req_isp->bubble_detected && req_isp->bubble_report) {
-		req_isp->num_acked = 0;
-		req_isp->bubble_detected = false;
-		list_del_init(&req->list);
-		list_add(&req->list, &ctx->pending_req_list);
-		atomic_set(&ctx_isp->process_bubble, 0);
-
-		CAM_DBG(CAM_REQ,
-			"Move active request %lld to pending list(cnt = %d) [bubble recovery]",
-			 req->request_id, ctx_isp->active_req_cnt);
-	} else {
+	if (req_isp->num_acked == req_isp->num_fence_map_out) {
 		list_del_init(&req->list);
 		list_add_tail(&req->list, &ctx->free_req_list);
 		ctx_isp->active_req_cnt--;
@@ -1259,15 +1243,6 @@ static int __cam_isp_ctx_apply_req_in_activated_state(
 	 *
 	 */
 	ctx_isp = (struct cam_isp_context *) ctx->ctx_priv;
-	if (atomic_read(&ctx_isp->process_bubble)) {
-		CAM_ERR_RATE_LIMIT(CAM_ISP,
-			"Processing bubble cannot apply Request Id %llu",
-			apply->request_id);
-		rc = -EAGAIN;
-		goto end;
-	}
-
-	spin_lock_bh(&ctx->lock);
 	req = list_first_entry(&ctx->pending_req_list, struct cam_ctx_request,
 		list);
 
