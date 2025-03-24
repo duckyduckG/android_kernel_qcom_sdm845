@@ -14,6 +14,7 @@
 */
 
 #include "ftsHardware.h"
+#include <linux/types.h>
 
 /*typedef unsigned char u8;
 typedef unsigned short u16;
