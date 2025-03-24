@@ -48,6 +48,10 @@
 		i2c0 = &qupv3_se10_i2c;
 		i2c1 = &qupv3_se3_i2c;
 		hsuart0 = &qupv3_se6_4uart;
+		/* add for asic uart and spi aliases { */
+		hsuart1 = &qupv3_se12_2uart;
+		spi1 = &qupv3_se4_spi;
+		/* add for asic uart and spi aliases } */
 	};
 
 	cpus {
@@ -576,40 +580,47 @@
 			reg = <0 0x8df00000 0 0x100000>;
 		};
 
+		/* increase modem_region 1MB size from 0x7800000 to 0x7900000 */
+		/* and shift other regions */
 		pil_modem_mem: modem_region@0x8e000000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0 0x8e000000 0 0x7800000>;
+			reg = <0 0x8e000000 0 0x7900000>;
 		};
 
-		pil_video_mem: video_region@0x95800000 {
+		/* shift video_region from 0x95800000 to 0x95900000 */
+		pil_video_mem: video_region@0x95900000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0 0x95800000 0 0x500000>;
+			reg = <0 0x95900000 0 0x500000>;
 		};
 
-		pil_cdsp_mem: cdsp_region@0x95d00000 {
+		/* shift cdsp_region from 0x95d00000 to 0x95e00000 */
+		pil_cdsp_mem: cdsp_region@0x95e00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0 0x95d00000 0 0x800000>;
+			reg = <0 0x95e00000 0 0x800000>;
 		};
 
-		pil_mba_mem: mba_region@0x96500000 {
+		/* shift mba_region from 0x96500000 to 0x96600000 */
+		pil_mba_mem: mba_region@0x96600000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0 0x96500000 0 0x200000>;
+			reg = <0 0x96600000 0 0x200000>;
 		};
 
-		pil_slpi_mem: slpi_region@0x96700000 {
+		/* shift slpi_region from 0x96700000 to 0x96800000 */
+		pil_slpi_mem: slpi_region@0x96800000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0 0x96700000 0 0x1400000>;
+			reg = <0 0x96800000 0 0x1400000>;
 		};
 
-		pil_spss_mem: pil_spss_region@0x97b00000 {
+		/* shift pil_spss_region from 0x97b00000 to 0x97c00000 */
+		pil_spss_mem: pil_spss_region@0x97c00000 {
 			compatible = "removed-dma-pool";
 			no-map;
-			reg = <0 0x97b00000 0 0x100000>;
+			reg = <0 0x97c00000 0 0x100000>;
 		};
 
 		adsp_mem: adsp_region {

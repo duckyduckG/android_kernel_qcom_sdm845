@@ -1,0 +1,28 @@
+&soc {
+	spi_switch {
+		compatible = "ti,ts3a5018";
+		status = "okay";
+
+		vin-supply = <&pm8998_s4>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdm845_gpio14_default>;
+		en-fix-value = <0>;
+		gpio-in = <&tlmm 14 0>;
+		mode-labels = "NONE", "ASIC", "QCOM";
+		default-mode = <1>; /* NC mode */
+	};
+
+	led_switch {
+		compatible = "ti,ts3a5018";
+		status = "okay";
+
+		vin-supply = <&pm8998_s4>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdm845_gpio2_default>;
+		en-fix-value = <0>;
+		gpio-in = <&tlmm 2 0>;
+		mode-labels = "NONE", "QCOM", "ASIC";
+		default-mode = <1>; /* NC mode */
+	};
+
+};

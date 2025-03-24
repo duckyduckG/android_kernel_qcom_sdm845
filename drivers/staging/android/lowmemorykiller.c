@@ -772,7 +772,8 @@ static unsigned long lowmem_scan(struct shrinker *s, struct shrink_control *sc)
 			global_node_page_state(NR_FILE_PAGES) *
 			(long)(PAGE_SIZE / 1024),
 			sc->gfp_mask);
-
+		printk("BBox::EHCS;55108:i:lowmemorykiller:%s:%hd:%s:%ld\n", current->comm, selected_oom_score_adj,
+			selected->comm,selected_tasksize * (long)(PAGE_SIZE / 1024));
 		if (lowmem_debug_level >= 2 && selected_oom_score_adj == 0) {
 			show_mem(SHOW_MEM_FILTER_NODES);
 			show_mem_call_notifiers();

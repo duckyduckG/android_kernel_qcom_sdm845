@@ -312,7 +312,9 @@
 };
 
 &qupv3_se3_i2c {
+/* modified and remove to project NFC dtsi */
 	status = "ok";
+/*
 	nq@28 {
 		compatible = "qcom,nq-nci";
 		reg = <0x28>;
@@ -330,6 +332,7 @@
 			     &nfc_clk_default>;
 		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend>;
 	};
+*/
 };
 
 &qupv3_se10_i2c {

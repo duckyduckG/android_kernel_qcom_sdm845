@@ -75,6 +75,11 @@ enum print_reason {
 #define FCC_STEPPER_VOTER		"FCC_STEPPER_VOTER"
 #define PD_NOT_SUPPORTED_VOTER		"PD_NOT_SUPPORTED_VOTER"
 
+#if defined(CONFIG_FIH_BATTERY)
+#define PANEL_VOTER			"PANEL_VOTER"
+#endif /* CONFIG_FIH_BATTERY */
+
+
 #define VCONN_MAX_ATTEMPTS	3
 #define OTG_MAX_ATTEMPTS	3
 #define BOOST_BACK_STORM_COUNT	3
@@ -273,6 +278,9 @@ struct smb_charger {
 
 	/* notifiers */
 	struct notifier_block	nb;
+#if defined(CONFIG_FIH_BATTERY) && !defined(CONFIG_AOD_FEATURE)
+	struct notifier_block	panel_nb;
+#endif /* CONFIG_FIH_BATTERY */
 
 	/* parallel charging */
 	struct parallel_params	pl;
@@ -301,6 +309,9 @@ struct smb_charger {
 	struct votable		*usb_irq_enable_votable;
 	struct votable		*typec_irq_disable_votable;
 	struct votable		*disable_power_role_switch;
+#if defined(CONFIG_FIH_BATTERY)
+	struct votable		*sw_jeita_recover_votable;
+#endif /* CONFIG_FIH_BATTERY */
 
 	/* work */
 	struct work_struct	bms_update_work;
@@ -317,6 +328,10 @@ struct smb_charger {
 	struct work_struct	legacy_detection_work;
 	struct delayed_work	uusb_otg_work;
 	struct delayed_work	bb_removal_work;
+#if defined(CONFIG_FIH_BATTERY)
+	struct delayed_work	info_update_work;
+	struct delayed_work	charging_check_work;
+#endif /* CONFIG_FIH_BATTERY */
 
 	/* cached status */
 	int			voltage_min_uv;
@@ -384,6 +399,21 @@ struct smb_charger {
 	int			pulse_cnt;
 
 	int			die_health;
+
+#if defined(CONFIG_FIH_BATTERY)
+	int			*info_update_ms;
+	int			*reg_dump_mask;
+	bool			panel_on_ctl;
+	int			panel_on_usb_icl_ua;
+	bool			ambient_display_en;
+	bool			sw_jeita_full_charge;
+	bool			sw_jeita_recover;
+	u32			sw_jeita_status;
+	bool			charging_forecast_en;
+	bool			charging_forecast;
+	bool			charging_check_en;
+	int			aicl_rerun;
+#endif /* CONFIG_FIH_BATTERY */
 };
 
 int smblib_read(struct smb_charger *chg, u16 addr, u8 *val);
@@ -541,6 +571,10 @@ int smblib_disable_hw_jeita(struct smb_charger *chg, bool disable);
 int smblib_rerun_aicl(struct smb_charger *chg);
 int smblib_set_icl_current(struct smb_charger *chg, int icl_ua);
 int smblib_get_icl_current(struct smb_charger *chg, int *icl_ua);
+#if defined(CONFIG_FIH_BATTERY)
+int smblib_set_icl_current_override(struct smb_charger *chg, int icl_ua);
+int smblib_get_icl_current_override(struct smb_charger *chg, int *icl_ua);
+#endif /* CONFIG_FIH_BATTERY */
 int smblib_get_charge_current(struct smb_charger *chg, int *total_current_ua);
 int smblib_get_prop_pr_swap_in_progress(struct smb_charger *chg,
 				union power_supply_propval *val);

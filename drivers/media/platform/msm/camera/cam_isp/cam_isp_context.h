@@ -115,7 +115,6 @@ struct cam_isp_ctx_req {
 	uint32_t                              num_acked;
 	int32_t                               bubble_report;
 	struct cam_isp_prepare_hw_update_data hw_update_data;
-	bool                                  bubble_detected;
 };
 
 /**
@@ -142,7 +141,7 @@ struct cam_isp_context_state_monitor {
  *
  * @base:                      Common context object pointer
  * @frame_id:                  Frame id tracking for the isp context
- * @substate_actiavted:        Current substate for the activated state.
+ * @substate_activated:        Current substate for the activated state.
  * @substate_machine:          ISP substate machine for external interface
  * @substate_machine_irq:      ISP substate machine for irq handling
  * @req_base:                  Common request object storage

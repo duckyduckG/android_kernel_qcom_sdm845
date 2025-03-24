@@ -109,7 +109,7 @@ static int dp_power_regulator_ctrl(struct dp_power_private *power, bool enable)
 error:
 	return rc;
 }
-
+extern int dp_parser_pinctrl(struct dp_parser *parser);
 static int dp_power_pinctrl_set(struct dp_power_private *power, bool active)
 {
 	int rc = -EFAULT;
@@ -117,10 +117,17 @@ static int dp_power_pinctrl_set(struct dp_power_private *power, bool active)
 	struct dp_parser *parser;
 
 	parser = power->parser;
+	pr_err("GPIO set %s pins\n",active ? "dp_active": "dp_sleep");
 
-	if (IS_ERR_OR_NULL(parser->pinctrl.pin))
-		return PTR_ERR(parser->pinctrl.pin);
-
+	if (IS_ERR_OR_NULL(parser->pinctrl.pin)){
+		//return PTR_ERR(parser->pinctrl.pin);
+		pr_err("GPIO %s pins\n",__func__);
+		dp_parser_pinctrl(parser);
+		if(IS_ERR_OR_NULL(parser))
+		{
+			return PTR_ERR(parser);
+		}
+	}
 	pin_state = active ? parser->pinctrl.state_active
 				: parser->pinctrl.state_suspend;
 	if (!IS_ERR_OR_NULL(pin_state)) {
@@ -136,6 +143,10 @@ static int dp_power_pinctrl_set(struct dp_power_private *power, bool active)
 		       : "dp_sleep");
 	}
 
+	if(!active){
+		devm_pinctrl_put(parser->pinctrl.pin);
+		parser->pinctrl.pin = NULL;
+	}
 	return rc;
 }
 
@@ -391,6 +402,7 @@ static int dp_power_config_gpios(struct dp_power_private *power, bool flip,
 
 	mp = &power->parser->mp[DP_CORE_PM];
 	config = mp->gpio_config;
+	pr_err("gpio %s\n",enable?"enable":"disable");
 
 	if (enable) {
 		rc = dp_power_request_gpios(power);
@@ -404,6 +416,7 @@ static int dp_power_config_gpios(struct dp_power_private *power, bool flip,
 		for (i = 0; i < mp->num_gpio; i++) {
 			gpio_set_value(config[i].gpio, 0);
 			gpio_free(config[i].gpio);
+			pr_err("gpio %s free\n",config[i].gpio_name);
 		}
 	}
 

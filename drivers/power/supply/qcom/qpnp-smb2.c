@@ -28,6 +28,13 @@
 #include "smb-lib.h"
 #include "storm-watch.h"
 #include <linux/pmic-voter.h>
+#if defined(CONFIG_FIH_BATTERY)
+#if !defined(CONFIG_AOD_FEATURE)
+#include <linux/msm_drm_notify.h>
+#else
+#include <uapi/drm/sde_drm.h>
+#endif /* CONFIG_AOD_FEATURE */
+#endif /* CONFIG_FIH_BATTERY */
 
 #define SMB2_DEFAULT_WPWR_UW	8000000
 
@@ -199,6 +206,18 @@ module_param_named(
 	audio_headset_drp_wait_ms, __audio_headset_drp_wait_ms, int, 0600
 );
 
+#if defined(CONFIG_FIH_BATTERY)
+static int __info_update_ms;
+module_param_named(
+	info_update_ms, __info_update_ms, int, 0600
+);
+
+static int __reg_dump_mask;
+module_param_named(
+	reg_dump_mask, __reg_dump_mask, int, 0600
+);
+#endif /* CONFIG_FIH_BATTERY */
+
 #define MICRO_1P5A		1500000
 #define MICRO_P1A		100000
 #define OTG_DEFAULT_DEGLITCH_TIME_MS	50
@@ -207,6 +226,103 @@ module_param_named(
 #define BITE_WDOG_TIMEOUT_8S		0x3
 #define BARK_WDOG_TIMEOUT_MASK		GENMASK(3, 2)
 #define BARK_WDOG_TIMEOUT_SHIFT		2
+
+#if defined(CONFIG_FIH_BATTERY) && defined(CONFIG_AOD_FEATURE)
+static struct smb2 *mChip = NULL;
+#endif /* CONFIG_FIH_BATTERY */
+
+/*  - Create a node to on/off otg */
+char fih_otg_disable_mode = 0; // add for OTG FREQ
+static ssize_t fih_otg_show(struct device *dev,
+			       struct device_attribute *attr, char *buf)
+{
+	pr_info("fih_otg_show = %d\n", fih_otg_disable_mode);
+	return sprintf(buf, "%d\n", fih_otg_disable_mode);
+}
+
+static ssize_t fih_otg_store(struct device *dev,
+		struct device_attribute *attr, const char
+		*buf, size_t size)
+{
+	struct smb2 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+	int intval =0;
+	int rc;
+	u8 stat;
+	int reg_enabled = -1;
+
+	sscanf(buf, "%d", &intval);
+
+	if(intval !=0 && intval !=1){
+		pr_info("%s:Invalid argument:%s\n", __func__, buf);
+		return -EINVAL;
+	}
+	fih_otg_disable_mode = intval;
+
+	reg_enabled = smblib_vbus_regulator_is_enabled(chg->vbus_vreg->rdev);
+	if(reg_enabled != 0 && reg_enabled != 1){
+		pr_err("%s:Can't get regulator status:%d\n", __func__, reg_enabled);
+		goto end;
+	}
+
+	if(intval == 1){
+		if(reg_enabled){
+			pr_info("%s:Disable otg\n", __func__);
+			smblib_vbus_regulator_disable(chg->vbus_vreg->rdev);
+		}
+		else{
+			pr_info("%s:Disable otg, but otg isn't enabled\n", __func__);
+		}
+	}
+	else{
+		rc = smblib_read(chg, TYPE_C_STATUS_2_REG, &stat);
+		if(rc < 0){
+			pr_err("%s:Couldn't read TYPE_C_STATUS_2 rc=%d\n", __func__, rc);
+			stat = 0;
+		}
+
+		if((stat & DFP_TYPEC_MASK) == DFP_RD_OPEN_BIT &&
+			(stat & EXIT_UFP_MODE_BIT) &&
+			!reg_enabled)
+		{
+			pr_info("%s:Enable otg\n", __func__);
+			smblib_vbus_regulator_enable(chg->vbus_vreg->rdev);
+		}
+		else{
+			pr_info("%s:Enable otg, but otg is not attached\n", __func__);
+		}
+	}
+
+end:
+	return size;
+}
+
+static DEVICE_ATTR(fih_otg_fun, 0644, fih_otg_show, fih_otg_store);
+
+ssize_t type_c_status_store(struct device *dev, struct device_attribute *attr, const char *tmpbuf, size_t count)
+{
+	return count;
+}
+
+ssize_t type_c_status_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct smb2 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+	u8 stat;
+	int rc =0;
+
+	rc = smblib_read(chg, TYPE_C_STATUS_1_REG, &stat);
+	if(rc < 0){
+		pr_err("%s:Couldn't read TYPE_C_STATUS_1_REG rc=%d\n", __func__, rc);
+		stat = 0;
+	}
+
+	return sprintf(buf, "%x\n", stat);
+}
+
+static DEVICE_ATTR(type_c_status, 0644, type_c_status_show, type_c_status_store);
+/* end FIH */
+
 static int smb2_parse_dt(struct smb2 *chip)
 {
 	struct smb_charger *chg = &chip->chg;
@@ -344,6 +460,31 @@ static int smb2_parse_dt(struct smb2 *chip)
 	chg->fcc_stepper_enable = of_property_read_bool(node,
 					"qcom,fcc-stepping-enable");
 
+#if defined(CONFIG_FIH_BATTERY)
+	rc = of_property_read_u32(node, "fih,info-update-ms", chg->info_update_ms);
+	if (rc < 0) {
+		*chg->info_update_ms = -EINVAL;
+	}
+
+	rc = of_property_read_u32(node, "fih,panel-on-usb-icl-ua", &chg->panel_on_usb_icl_ua);
+	if (rc < 0) {
+		chg->panel_on_usb_icl_ua = -EINVAL;
+	}
+
+	chg->sw_jeita_full_charge = of_property_read_bool(node, "fih,sw-jeita-full-charge");
+
+	chg->sw_jeita_recover = of_property_read_bool(node, "fih,sw-jeita-recover");
+
+	chg->charging_forecast_en = of_property_read_bool(node, "fih,charging-forecast-enable");
+
+	chg->charging_check_en = of_property_read_bool(node, "fih,charging-check-enable");
+
+	rc = of_property_read_u32(node, "fih,aicl-rerun", &chg->aicl_rerun);
+	if (rc < 0) {
+		chg->aicl_rerun = -EINVAL;
+	}
+#endif /* CONFIG_FIH_BATTERY */
+
 	return 0;
 }
 
@@ -378,6 +519,9 @@ static enum power_supply_property smb2_usb_props[] = {
 	POWER_SUPPLY_PROP_SDP_CURRENT_MAX,
 	POWER_SUPPLY_PROP_CONNECTOR_TYPE,
 	POWER_SUPPLY_PROP_MOISTURE_DETECTED,
+#if defined(CONFIG_FIH_BATTERY)
+	POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,
+#endif /* CONFIG_FIH_BATTERY */
 };
 
 static int smb2_usb_get_prop(struct power_supply *psy,
@@ -397,6 +541,10 @@ static int smb2_usb_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_ONLINE:
 		rc = smblib_get_prop_usb_online(chg, val);
+#if defined(CONFIG_FIH_BATTERY)
+                if (strstr(saved_command_line, "androidboot.mode=charger"))
+                        rc = smblib_get_prop_usb_present(chg, val);
+#endif /* CONFIG_FIH_BATTERY */
 		if (!val->intval)
 			break;
 
@@ -503,6 +651,11 @@ static int smb2_usb_get_prop(struct power_supply *psy,
 		val->intval = get_client_vote(chg->disable_power_role_switch,
 					      MOISTURE_VOTER);
 		break;
+#if defined(CONFIG_FIH_BATTERY)
+	case POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT:
+		rc = smblib_get_icl_current_override(chg, &val->intval);
+		break;
+#endif /* CONFIG_FIH_BATTERY */
 	default:
 		pr_err("get prop %d is not supported in usb\n", psp);
 		rc = -EINVAL;
@@ -573,6 +726,11 @@ static int smb2_usb_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_SDP_CURRENT_MAX:
 		rc = smblib_set_prop_sdp_current_max(chg, val);
 		break;
+#if defined(CONFIG_FIH_BATTERY)
+	case POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT:
+		rc = smblib_set_icl_current_override(chg, val->intval);
+		break;
+#endif /* CONFIG_FIH_BATTERY */
 	default:
 		pr_err("set prop %d is not supported\n", psp);
 		rc = -EINVAL;
@@ -589,6 +747,9 @@ static int smb2_usb_prop_is_writeable(struct power_supply *psy,
 {
 	switch (psp) {
 	case POWER_SUPPLY_PROP_CTM_CURRENT_MAX:
+#if defined(CONFIG_FIH_BATTERY)
+	case POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT:
+#endif /* CONFIG_FIH_BATTERY */
 		return 1;
 	default:
 		break;
@@ -647,6 +808,10 @@ static int smb2_usb_port_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_ONLINE:
 		rc = smblib_get_prop_usb_online(chg, val);
+#if defined(CONFIG_FIH_BATTERY)
+                if (strstr(saved_command_line, "androidboot.mode=charger"))
+                        rc = smblib_get_prop_usb_present(chg, val);
+#endif /* CONFIG_FIH_BATTERY */
 		if (!val->intval)
 			break;
 
@@ -890,6 +1055,10 @@ static int smb2_dc_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_ONLINE:
 		rc = smblib_get_prop_dc_online(chg, val);
+#if defined(CONFIG_FIH_BATTERY)
+                if (strstr(saved_command_line, "androidboot.mode=charger"))
+                        rc = smblib_get_prop_dc_present(chg, val);
+#endif /* CONFIG_FIH_BATTERY */
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
 		rc = smblib_get_prop_dc_current_max(chg, val);
@@ -1012,6 +1181,9 @@ static enum power_supply_property smb2_batt_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_FULL,
 	POWER_SUPPLY_PROP_CYCLE_COUNT,
 	POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE,
+#if defined(CONFIG_FIH_BATTERY)
+	POWER_SUPPLY_PROP_MANUFACTURER,
+#endif /* CONFIG_FIH_BATTERY */
 };
 
 static int smb2_batt_get_prop(struct power_supply *psy,
@@ -1123,6 +1295,9 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CYCLE_COUNT:
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 	case POWER_SUPPLY_PROP_TEMP:
+#if defined(CONFIG_FIH_BATTERY)
+	case POWER_SUPPLY_PROP_MANUFACTURER:
+#endif /* CONFIG_FIH_BATTERY */
 		rc = smblib_get_prop_from_bms(chg, psp, val);
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
@@ -1661,6 +1836,18 @@ static int smb2_init_hw(struct smb2 *chip)
 		dev_err(chg->dev, "Couldn't configure AICL rc=%d\n", rc);
 		return rc;
 	}
+
+#if defined(CONFIG_FIH_BATTERY)
+	if (chg->aicl_rerun != -EINVAL) {
+		rc = smblib_masked_write(chg, USBIN_AICL_OPTIONS_CFG_REG,
+				USBIN_AICL_RERUN_EN_BIT,
+				chg->aicl_rerun ? USBIN_AICL_RERUN_EN_BIT : 0);
+		if (rc < 0) {
+			dev_err(chg->dev, "Couldn't configure AICL rc=%d\n", rc);
+			return rc;
+		}
+	}
+#endif /* CONFIG_FIH_BATTERY */
 
 	/* Configure charge enable for software control; active high */
 	rc = smblib_masked_write(chg, CHGR_CFG2_REG,
@@ -2354,6 +2541,217 @@ static void smb2_create_debugfs(struct smb2 *chip)
 
 #endif
 
+#if defined(CONFIG_FIH_BATTERY)
+static void panel_on_usb_icl_change(struct smb_charger *chg)
+{
+	if (chg->panel_on_usb_icl_ua > 0 && chg->panel_on_ctl && !chg->ambient_display_en) {
+		vote(chg->hvdcp_disable_votable_indirect, PANEL_VOTER, true, 0);
+		vote(chg->usb_icl_votable, PANEL_VOTER, true, chg->panel_on_usb_icl_ua);
+	} else {
+		vote(chg->hvdcp_disable_votable_indirect, PANEL_VOTER, false, 0);
+		vote(chg->usb_icl_votable, PANEL_VOTER, false, 0);
+	}
+}
+
+static ssize_t panel_on_usb_icl_ua_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct smb2 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", chg->panel_on_usb_icl_ua);
+}
+
+static ssize_t panel_on_usb_icl_ua_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct smb2 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+	int intval;
+
+	if (sscanf(buf, "%d", &intval) != 1) {
+		return -EINVAL;
+	}
+
+	chg->panel_on_usb_icl_ua = intval;
+
+	panel_on_usb_icl_change(chg);
+
+	return count;
+}
+
+static DEVICE_ATTR(panel_on_usb_icl_ua, S_IRUGO | S_IWUSR | S_IWGRP,
+		panel_on_usb_icl_ua_show, panel_on_usb_icl_ua_store);
+
+// 0: Panel ON
+// 1: Panel OFF or Panel ON with Screen saver or Ambient display
+static ssize_t lcm_status_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct smb2 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", chg->ambient_display_en);
+}
+
+static ssize_t lcm_status_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct smb2 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+	int intval;
+
+	if (sscanf(buf, "%d", &intval) != 1 || (intval < 0 || intval > 1)) {
+		return -EINVAL;
+	}
+
+	chg->ambient_display_en = (bool)intval;
+
+	panel_on_usb_icl_change(chg);
+
+	return count;
+}
+
+static DEVICE_ATTR(lcm_status, S_IRUGO | S_IWUSR | S_IWGRP,
+		lcm_status_show, lcm_status_store);
+
+#if !defined(CONFIG_AOD_FEATURE)
+static int panel_notifier_call(struct notifier_block *nb,
+		unsigned long event, void *data)
+{
+	struct smb_charger *chg = container_of(nb, struct smb_charger, panel_nb);
+	struct msm_drm_notifier *evdata = data;
+
+	if (event != MSM_DRM_EVENT_BLANK || !evdata || !evdata->data || !chg) {
+		return 0;
+	}
+
+	pr_err("%s blank=%d\n", __func__, *(int *)evdata->data);
+	switch (*(int *)evdata->data) {
+	case MSM_DRM_BLANK_UNBLANK:
+		chg->panel_on_ctl = true;
+		break;
+	case MSM_DRM_BLANK_POWERDOWN:
+	default:
+		chg->panel_on_ctl = false;
+		break;
+	}
+
+	panel_on_usb_icl_change(chg);
+
+	return 0;
+}
+#else
+int panel_notifier_call(int power_mode) /* called in dsi_aod.c */
+{
+	struct smb_charger *chg = &mChip->chg;
+
+	if (!chg) {
+		return 0;
+	}
+
+	pr_err("%s power_mode=%d\n", __func__, power_mode);
+	switch (power_mode) {
+	case SDE_MODE_DPMS_ON:
+		chg->panel_on_ctl = true;
+		break;
+	case SDE_MODE_DPMS_LP1: /* Glance mode: ON -> OFF -> LP / LP -> ON -> LP */
+	case SDE_MODE_DPMS_OFF:
+	default:
+		chg->panel_on_ctl = false;
+		break;
+	}
+
+	panel_on_usb_icl_change(chg);
+
+	return 0;
+}
+#endif /* CONFIG_AOD_FEATURE */
+
+#define SW_JEITA_FULL_CHARGE_NONE 0
+#define SW_JEITA_FULL_CHARGE_WARM 1
+#define SW_JEITA_FULL_CHARGE_COOL 2
+#define SW_JEITA_HYSTERESIS 50
+
+static int sw_jeita_full_charge(struct smb_charger *chg)
+{
+	union power_supply_propval val = {0, };
+	int rc = 0, temp = 0;
+	const char *effective_client_fv;
+
+	/* return if status is NOT full */
+	rc = smblib_get_prop_batt_status(chg, &val);
+	if (rc < 0) {
+		pr_err("Couldn't get batt status rc=%d\n", rc);
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+	if (val.intval != POWER_SUPPLY_STATUS_FULL) {
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+
+	/* return if capacity is 100% */
+	rc = smblib_get_prop_batt_capacity(chg, &val);
+	if (rc < 0) {
+		pr_err("Couldn't get batt capacity rc=%d\n", rc);
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+	if (val.intval == 100) {
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+
+	/* return if JEITA_VOTER is NOT effective */
+	if (chg->fv_votable == NULL) {
+		pr_err("Couldn't find FV votable rc=%d\n", rc);
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+	effective_client_fv = get_effective_client(chg->fv_votable);
+	if (strcmp(effective_client_fv, "JEITA_VOTER") != 0) {
+		pr_err("full charge (effective_client_fv=%s)\n", effective_client_fv);
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+
+	/* check if temp is warm/cool */
+	rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_TEMP, &val);
+	if (rc < 0) {
+		pr_err("Couldn't get batt temp rc=%d\n", rc);
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+	temp = val.intval;
+	pr_err("full charge (temp=%d)\n", temp);
+
+	rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_WARM_TEMP, &val);
+	if (rc < 0) {
+		pr_err("Couldn't get warn temp rc=%d\n", rc);
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+	if (temp > val.intval - SW_JEITA_HYSTERESIS) {
+		return SW_JEITA_FULL_CHARGE_WARM;
+	}
+
+	rc = smblib_get_prop_from_bms(chg, POWER_SUPPLY_PROP_COOL_TEMP, &val);
+	if (rc < 0) {
+		pr_err("Couldn't get cool temp rc=%d\n", rc);
+		return SW_JEITA_FULL_CHARGE_NONE;
+	}
+	if (temp < val.intval + SW_JEITA_HYSTERESIS) {
+		return SW_JEITA_FULL_CHARGE_COOL;
+	}
+
+	return SW_JEITA_FULL_CHARGE_NONE;
+}
+
+static ssize_t sw_jeita_full_charge_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct smb2 *chip = dev_get_drvdata(dev);
+	struct smb_charger *chg = &chip->chg;
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", sw_jeita_full_charge(chg));
+}
+
+static DEVICE_ATTR(jeita_full_capacity, S_IRUGO, sw_jeita_full_charge_show, NULL);
+#endif /* CONFIG_FIH_BATTERY */
+
 static int smb2_probe(struct platform_device *pdev)
 {
 	struct smb2 *chip;
@@ -2377,6 +2775,10 @@ static int smb2_probe(struct platform_device *pdev)
 	chg->die_health = -EINVAL;
 	chg->name = "PMI";
 	chg->audio_headset_drp_wait_ms = &__audio_headset_drp_wait_ms;
+#if defined(CONFIG_FIH_BATTERY)
+	chg->info_update_ms = &__info_update_ms;
+	chg->reg_dump_mask = &__reg_dump_mask;
+#endif /* CONFIG_FIH_BATTERY */
 
 	chg->regmap = dev_get_regmap(chg->dev->parent, NULL);
 	if (!chg->regmap) {
@@ -2526,6 +2928,37 @@ static int smb2_probe(struct platform_device *pdev)
 	pr_info("QPNP SMB2 probed successfully usb:present=%d type=%d batt:present = %d health = %d charge = %d\n",
 		usb_present, chg->real_charger_type,
 		batt_present, batt_health, batt_charge_type);
+
+	/*  - Create a node to on/off otg */
+	device_create_file(&pdev->dev, &dev_attr_fih_otg_fun); // add for FREQ
+	device_create_file(&pdev->dev, &dev_attr_type_c_status);
+
+#if defined(CONFIG_FIH_BATTERY)
+	if (chg->panel_on_usb_icl_ua != -EINVAL) {
+		if (strstr(saved_command_line, "panel_on_ctl=0") ||
+		    strstr(saved_command_line, "androidboot.mode=charger")) {
+			chg->panel_on_usb_icl_ua = 0;
+		} else {
+			chg->panel_on_ctl = true;
+			panel_on_usb_icl_change(chg);
+		}
+		device_create_file(&pdev->dev, &dev_attr_panel_on_usb_icl_ua);
+		device_create_file(&pdev->dev, &dev_attr_lcm_status);
+#if !defined(CONFIG_AOD_FEATURE)
+		chg->panel_nb.notifier_call = panel_notifier_call;
+		if (msm_drm_register_client(&chg->panel_nb)) {
+			pr_err("Couldn't register panel notifier\n");
+		}
+#else
+		mChip = chip;
+#endif /* CONFIG_AOD_FEATURE */
+	}
+
+	if (chg->sw_jeita_full_charge) {
+		device_create_file(&pdev->dev, &dev_attr_jeita_full_capacity);
+	}
+#endif /* CONFIG_FIH_BATTERY */
+
 	return rc;
 
 cleanup:
@@ -2556,6 +2989,23 @@ static int smb2_remove(struct platform_device *pdev)
 	struct smb2 *chip = platform_get_drvdata(pdev);
 	struct smb_charger *chg = &chip->chg;
 
+#if defined(CONFIG_FIH_BATTERY)
+	if (chg->panel_on_usb_icl_ua != -EINVAL) {
+		device_remove_file(&pdev->dev, &dev_attr_panel_on_usb_icl_ua);
+		device_remove_file(&pdev->dev, &dev_attr_lcm_status);
+#if !defined(CONFIG_AOD_FEATURE)
+		msm_drm_unregister_client(&chg->panel_nb);
+#else
+		mChip = NULL;
+#endif /* CONFIG_AOD_FEATURE */
+	}
+
+	if (chg->sw_jeita_full_charge) {
+		device_remove_file(&pdev->dev, &dev_attr_jeita_full_capacity);
+	}
+#endif /* CONFIG_FIH_BATTERY */
+	device_remove_file(&pdev->dev, &dev_attr_fih_otg_fun); // add for FREQ
+	device_remove_file(&pdev->dev, &dev_attr_type_c_status);
 	power_supply_unregister(chg->batt_psy);
 	power_supply_unregister(chg->usb_psy);
 	power_supply_unregister(chg->usb_port_psy);

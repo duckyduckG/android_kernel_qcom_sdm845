@@ -44,22 +44,20 @@
 /* soc id */
 #define SDM670_SOC_ID 336
 #define SDM710_SOC_ID 360
-#define SDM712_SOC_ID 393
 
 /* Minor Version */
 #define SDM670_V1_1 0x1
 /**
  * enum cam_vote_level - Enum for voting level
  *
- * @CAM_SUSPEND_VOTE  : Suspend vote
- * @CAM_MINSVS_VOTE   : Min SVS vote
- * @CAM_LOWSVS_VOTE   : Low SVS vote
- * @CAM_SVS_VOTE      : SVS vote
- * @CAM_SVSL1_VOTE    : SVS Plus vote
- * @CAM_NOMINAL_VOTE  : Nominal vote
- * @CAM_NOMINALL1_VOTE: Nominal plus vote
- * @CAM_TURBO_VOTE    : Turbo vote
- * @CAM_MAX_VOTE      : Max voting level, This is invalid level.
+ * @CAM_SUSPEND_VOTE : Suspend vote
+ * @CAM_MINSVS_VOTE  : Min SVS vote
+ * @CAM_LOWSVS_VOTE  : Low SVS vote
+ * @CAM_SVS_VOTE     : SVS vote
+ * @CAM_SVSL1_VOTE   : SVS Plus vote
+ * @CAM_NOMINAL_VOTE : Nominal vote
+ * @CAM_TURBO_VOTE   : Turbo vote
+ * @CAM_MAX_VOTE     : Max voting level, This is invalid level.
  */
 enum cam_vote_level {
 	CAM_SUSPEND_VOTE,
@@ -68,7 +66,6 @@ enum cam_vote_level {
 	CAM_SVS_VOTE,
 	CAM_SVSL1_VOTE,
 	CAM_NOMINAL_VOTE,
-	CAM_NOMINALL1_VOTE,
 	CAM_TURBO_VOTE,
 	CAM_MAX_VOTE,
 };
@@ -164,6 +161,8 @@ struct cam_soc_gpio_data {
  * @clk_level_override:     Clk level set from debugfs
  * @clk_control:            Enable/disable clk rate control through debugfs
  * @soc_private:            Soc private data
+ * @asic_supported: Added to denote a Smart Sensor
+ * @asic_uart_line: Added to control asic uart
  */
 struct cam_hw_soc_info {
 	struct platform_device         *pdev;
@@ -209,6 +208,10 @@ struct cam_hw_soc_info {
 	bool                            clk_control_enable;
 
 	void                           *soc_private;
+	/* add LIGHT asic check*/
+	uint32_t	                   asic_supported;
+	int                            asic_uart_line;
+	int32_t                        asic_sync_obj;
 };
 
 /*

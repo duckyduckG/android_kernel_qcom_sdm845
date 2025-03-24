@@ -269,6 +269,7 @@
 				 &cam_sensor_front_active>;
 		pinctrl-1 = <&cam_sensor_mclk1_suspend
 				 &cam_sensor_front_suspend>;
+		/*
 		gpios = <&tlmm 14 0>,
 			<&tlmm 28 0>,
 			<&tlmm 8 0>;
@@ -279,6 +280,7 @@
 		gpio-req-tbl-label = "CAMIF_MCLK2",
 					"CAM_RESET2",
 					"CAM_VANA2";
+		*/
 		sensor-position = <1>;
 		sensor-mode = <0>;
 		cci-master = <1>;
@@ -387,9 +389,9 @@
 		sensor-position-roll = <270>;
 		sensor-position-pitch = <0>;
 		sensor-position-yaw = <0>;
-		eeprom-src = <&eeprom_front>;
+		/*eeprom-src = <&eeprom_front>;
 		actuator-src = <&actuator_front>;
-		led-flash-src = <&led_flash_front>;
+		led-flash-src = <&led_flash_front>;*/
 		cam_vio-supply = <&pm8998_lvs1>;
 		cam_vana-supply = <&camera_vana_ldo>;
 		cam_vdig-supply = <&camera_ldo>;
@@ -406,6 +408,7 @@
 				 &cam_sensor_front_active>;
 		pinctrl-1 = <&cam_sensor_mclk1_suspend
 				 &cam_sensor_front_suspend>;
+		/*
 		gpios = <&tlmm 14 0>,
 			<&tlmm 28 0>;
 		gpio-reset = <1>;
@@ -413,6 +416,7 @@
 		gpio-req-tbl-flags = <1 0>;
 		gpio-req-tbl-label = "CAMIF_MCLK2",
 					"CAM_RESET2";
+		*/
 		sensor-mode = <0>;
 		cci-master = <1>;
 		status = "ok";

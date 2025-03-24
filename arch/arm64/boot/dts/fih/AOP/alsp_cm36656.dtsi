@@ -1,0 +1,7 @@
+&soc {
+	fih_alsp {
+		compatible = "fih_alsp";
+		status = "ok";
+		fih-alsp,alspinfo = "cm36656";
+	};
+};

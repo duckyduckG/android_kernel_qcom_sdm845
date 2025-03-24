@@ -36,6 +36,24 @@
 
 #define DSI_MODE_MAX 5
 
+#define PANEL_OFF_MODE 0
+#define PANEL_ON_MODE 1
+#define PANEL_LOW_POWER_MODE 2
+#define PANEL_VR_MODE 3
+#define PANEL_LP_TO_ON_MODE 4
+
+#define PANEL_UNKNOW 0x0
+#define PANEL_LGD_SW43402_DSC_CMD 0x1
+#define PANEL_LGD_EA9151_DSC_CMD 0x2
+
+
+enum {
+	PANEL_ID_NONE_DEFINE = 0,
+	PANEL_ID_LGD_SW43402_WQHD_1440_2880,
+	PANEL_ID_LGD_EA9151_WQHD_1440_2880,
+	PANEL_ID_MAX,
+};
+
 enum dsi_panel_rotation {
 	DSI_PANEL_ROTATE_NONE = 0,
 	DSI_PANEL_ROTATE_HV_FLIP,
@@ -154,6 +172,17 @@ struct drm_panel_esd_config {
 	u8 *status_buf;
 	u32 groups;
 };
+struct drm_panel_reg_config {
+	bool reg_enabled;
+
+	struct dsi_panel_cmd_set status_cmd;
+	u32 *status_cmds_rlen;
+	u32 *status_valid_params;
+	u32 *status_value;
+	u8 *return_buf;
+	u8 *status_buf;
+	u32 groups;
+};
 
 enum dsi_panel_type {
 	DSI_PANEL = 0,
@@ -190,6 +219,7 @@ struct dsi_panel {
 	struct dsi_pinctrl_info pinctrl;
 	struct drm_panel_hdr_properties hdr_props;
 	struct drm_panel_esd_config esd_config;
+	struct drm_panel_reg_config reg_config;
 
 	bool lp11_init;
 	bool ulps_enabled;
@@ -204,6 +234,15 @@ struct dsi_panel {
 	enum dsi_dms_mode dms_mode;
 
 	bool sync_broadcast_en;
+
+	bool bl_reg_swap;
+	bool aod_feature;
+	int panel_power_mode;
+	int panel_id;
+	bool aod_independent_brightness;
+	bool aod_is_ready;
+	int reset_offtime;
+	bool panel_on_after_pixel_out;
 };
 
 static inline bool dsi_panel_ulps_feature_enabled(struct dsi_panel *panel)

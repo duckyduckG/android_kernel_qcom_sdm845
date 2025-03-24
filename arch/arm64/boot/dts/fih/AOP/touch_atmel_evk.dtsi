@@ -1,0 +1,25 @@
+&qupv3_se14_i2c{
+
+	status = "ok";
+
+	atmel_maxtouch@4b {
+                status = "ok";
+		compatible = "atmel,maxtouch";
+		reg = <0x4b>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <125 0x2008>;
+		fih,enable_vdd_by_gpio = <1>;//Control Vdd power by gpio instead of regulator
+		//ivdd-supply = <&pm8998_l14>;			//1.8V power regulator
+                fih,vdd_1p8_ldo_gpio = <&tlmm 44 0x00>;                 //1.8V LDO enable
+		avdd-supply = <&pm8998_l28>;			//3.3V power regulator
+		//pinctrl-names = "pmx_ts_active", "pmx_ts_suspend";
+		//pinctrl-0 = <&ts_active>;
+		//pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		atmel,irq-gpio = <&tlmm 125 0x2008>;		//interrupt gpio
+		atmel,reset-gpio = <&tlmm 99 0x00>;	//specify the gpio which control the reset pin of the IC (if available, not mandatory)
+		atmel,suspend-mode = <0>; //MXT_SUSPEND_DEEP_SLEEP
+		atmel,cfg_name = "mxt_640u_config";
+		atmel,fw_name = "mxt_640u_fw";
+	};
+
+};

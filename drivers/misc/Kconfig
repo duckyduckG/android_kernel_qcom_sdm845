@@ -813,6 +813,19 @@ config QPNP_MISC
 	  and the driver provides an API to check if this interrupt
 	  is available on the current PMIC chip.
 
+config ASIC_FLASH_SPI
+	tristate "ASIC flash SPI driver"
+	depends on SPI
+	default n
+	help
+	  Enable SPI interface for upgrading ASIC firmware
+
+config TS3A5018_SWITCH
+	tristate "TI TS3A5018 switch driver"
+	default n
+	help
+	  Enable switch driver for TI ts3a5018 chip
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

@@ -104,6 +104,19 @@ config TOUCHSCREEN_AR1021_I2C
 	  To compile this driver as a module, choose M here: the
 	  module will be called ar1021_i2c.
 
+config TOUCHSCREEN_ATMEL_MXT_640U
+	tristate "Atmel mXT I2C Touchscreen"
+	depends on I2C
+	select FW_LOADER
+	help
+	  Say Y here if you have Atmel mXT series I2C touchscreen,
+	  such as MXT640U, connected to your system.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the
+	   module will be called atmel_mxt_ts_640u.
+
 config TOUCHSCREEN_ATMEL_MXT
 	tristate "Atmel mXT I2C Touchscreen"
 	depends on I2C
@@ -1443,5 +1456,14 @@ config TOUCHSCREEN_EKTF3XXX_CHIPSET
 	  report 10 touches at a time.
 
 		  If unusre, say N.
+config TOUCHSCREEN_ST
+	bool "STMicroelectronics Touchscreen Driver"
+	depends on I2C
+	help
+	  Say Y here if you have a STMicroelectronics Touchscreen.
+
+	  If unsure, say N.
+
+source "drivers/input/touchscreen/st/Kconfig"
 
 endif

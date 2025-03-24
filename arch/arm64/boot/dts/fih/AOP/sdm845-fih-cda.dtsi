@@ -1,0 +1,8 @@
+&soc {
+	fih_cda {
+		compatible = "fih_cda";
+		status = "ok";
+		fih-cda,skuid = "00000";
+		fih-cda,status = "0";
+	};
+};

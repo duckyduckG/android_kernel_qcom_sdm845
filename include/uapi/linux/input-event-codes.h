@@ -692,6 +692,12 @@
 #define KEY_FP_GESTURE_LONG_PRESS	0x2ec
 #define KEY_FP_GESTURE_TAP		0x2ed
 
+#define  UDFP_LONG_PRESSED_DOWN	0x2f5
+#define  UDFP_LONG_PRESSED_UP		0x2f6
+#define  UDFP_LONG_PRESSED_PARTIAL_DOWN	0x2f7
+#define  UDFP_LONG_PRESSED_PARTIAL_UP		0x2f8
+
+
 /* We avoid low common keys in module aliases so they don't get huge. */
 #define KEY_MIN_INTERESTING	KEY_MUTE
 #define KEY_MAX			0x2ff

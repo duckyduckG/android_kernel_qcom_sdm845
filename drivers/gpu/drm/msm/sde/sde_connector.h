@@ -379,6 +379,12 @@ struct sde_connector {
 	bool allow_bl_update;
 
 	bool last_cmd_tx_sts;
+
+	size_t reg_off;
+	size_t reg_cnt;
+	size_t max_offset;
+	void *buffer;
+
 };
 
 /**

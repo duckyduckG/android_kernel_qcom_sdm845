@@ -1,0 +1,10 @@
+&soc {
+	fih_seb {
+		compatible = "fih_seb";
+		status = "ok";
+		fih-seb,enabled = "2";
+		fih-seb,unlocked = "1";
+		fih-seb,tampered = "1";
+		fih-seb,serialno = "00000000";
+	};
+};

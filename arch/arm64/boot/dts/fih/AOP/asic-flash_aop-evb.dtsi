@@ -1,0 +1,19 @@
+&qupv3_se4_spi {
+	asic-flash-spi@0 {
+		status = "disabled";
+		compatible = "asic,flash-spi";
+		reg = <0>;
+		spi-max-frequency = <5000000>;	/* 5 MHz */
+		spi-cpol;
+		spi-cpha;
+	};
+
+	m25p80@0 { /* This is backup solution for write firmware directly */
+		compatible = "jedec,spi-nor";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		spi-max-frequency = <5000000>;
+		reg = <0>;
+		status = "okay";
+	};
+};

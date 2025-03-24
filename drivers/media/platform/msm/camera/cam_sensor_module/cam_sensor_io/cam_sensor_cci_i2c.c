@@ -40,6 +40,8 @@ int32_t cam_cci_i2c_read(struct cam_sensor_cci_client *cci_client,
 		core, ioctl, VIDIOC_MSM_CCI_CFG, &cci_ctrl);
 	if (rc < 0) {
 		CAM_ERR(CAM_SENSOR, "rc = %d", rc);
+		printk("BBox;%s:cci i2c read fail\n", __func__);
+		printk("BBox::UEC;44::1\n");
 		return rc;
 	}
 
@@ -90,11 +92,15 @@ int32_t cam_camera_cci_i2c_read_seq(struct cam_sensor_cci_client *cci_client,
 	cci_ctrl.status = -EFAULT;
 	rc = v4l2_subdev_call(cci_client->cci_subdev,
 		core, ioctl, VIDIOC_MSM_CCI_CFG, &cci_ctrl);
+	if(rc < 0) {
+		printk("BBox;%s:cci i2c read fail\n", __func__);
+		printk("BBox::UEC;44::1\n");
+	}
 	rc = cci_ctrl.status;
 	CAM_DBG(CAM_SENSOR, "addr = 0x%x, rc = %d", addr, rc);
 	for (i = 0; i < num_byte; i++) {
 		data[i] = buf[i];
-		CAM_DBG(CAM_SENSOR, "Byte %d: Data: 0x%x\n", i, data[i]);
+		CAM_DBG(CAM_SENSOR, "Byte %d: Data: 0x%x", i, data[i]);
 	}
 	kfree(buf);
 	return rc;
@@ -128,6 +134,8 @@ static int32_t cam_cci_i2c_write_table_cmd(
 		core, ioctl, VIDIOC_MSM_CCI_CFG, &cci_ctrl);
 	if (rc < 0) {
 		CAM_ERR(CAM_SENSOR, "Failed rc = %d", rc);
+		printk("BBox;%s:cci i2c write fail\n", __func__);
+		printk("BBox::UEC;44::1\n");
 		return rc;
 	}
 	rc = cci_ctrl.status;

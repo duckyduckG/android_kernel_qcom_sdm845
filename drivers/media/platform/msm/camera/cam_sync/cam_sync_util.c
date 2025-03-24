@@ -49,7 +49,6 @@ int cam_sync_init_row(struct sync_table_row *table,
 	row->sync_id = idx;
 	row->state = CAM_SYNC_STATE_ACTIVE;
 	row->remaining = 0;
-	atomic_set(&row->ref_cnt, 0);
 	init_completion(&row->signaled);
 	INIT_LIST_HEAD(&row->callback_list);
 	INIT_LIST_HEAD(&row->user_payload_list);
@@ -176,12 +175,6 @@ int cam_sync_deinit_object(struct sync_table_row *table, uint32_t idx)
 			idx);
 		return -EINVAL;
 	}
-
-	if (row->state == CAM_SYNC_STATE_ACTIVE)
-		CAM_WARN(CAM_SYNC,
-			"Destroying an active sync object name:%s id:%i",
-			row->name, row->sync_id);
-
 	row->state = CAM_SYNC_STATE_INVALID;
 
 	/* Object's child and parent objects will be added into this list */
@@ -224,11 +217,6 @@ int cam_sync_deinit_object(struct sync_table_row *table, uint32_t idx)
 			continue;
 		}
 
-		if (child_row->state == CAM_SYNC_STATE_ACTIVE)
-			CAM_WARN(CAM_SYNC,
-				"Warning: destroying active child sync obj = %d",
-				child_info->sync_id);
-
 		cam_sync_util_cleanup_parents_list(child_row,
 			SYNC_LIST_CLEAN_ONE, idx);
 
@@ -252,11 +240,6 @@ int cam_sync_deinit_object(struct sync_table_row *table, uint32_t idx)
 			kfree(parent_info);
 			continue;
 		}
-
-		if (parent_row->state == CAM_SYNC_STATE_ACTIVE)
-			CAM_WARN(CAM_SYNC,
-				"Warning: destroying active parent sync obj = %d",
-				parent_info->sync_id);
 
 		cam_sync_util_cleanup_children_list(parent_row,
 			SYNC_LIST_CLEAN_ONE, idx);
@@ -385,6 +368,39 @@ void cam_sync_util_send_v4l2_event(uint32_t id,
 	v4l2_event_queue(sync_dev->vdev, &event);
 	CAM_DBG(CAM_SYNC, "send v4l2 event for sync_obj :%d",
 		sync_obj);
+}
+
+void cam_sync_util_send_v4l2_asic_event(uint32_t id,
+    uint32_t sync_obj,
+    int status,
+    void *payload,
+    int len_in_u64,
+    void *asic_payload,
+    int asic_len)
+{
+    struct v4l2_event event;
+    __u64 *payload_data = NULL;
+    struct cam_sync_ev_header *ev_header = NULL;
+    int max_size = sizeof(event.u.data) -
+                   sizeof(struct cam_sync_ev_header) -
+                   len_in_u64 * sizeof(__u64);
+
+    event.id = id;
+    event.type = CAM_LIGHT_CCB_V4L_EVENT;
+
+    ev_header = CAM_SYNC_GET_HEADER_PTR(event);
+    ev_header->sync_obj = sync_obj;
+    ev_header->status = status;
+
+    payload_data = CAM_SYNC_GET_PAYLOAD_PTR(event, __u64);
+    memcpy(payload_data, payload, len_in_u64*sizeof(__u64));
+
+    if (asic_len > max_size)
+        asic_len = max_size;
+
+    memcpy(&payload_data[len_in_u64], asic_payload, asic_len);
+
+    v4l2_event_queue(sync_dev->vdev, &event);
 }
 
 int cam_sync_util_update_parent_state(struct sync_table_row *parent_row,

@@ -721,3 +721,23 @@ static int __init msm_restart_init(void)
 	return platform_driver_register(&msm_restart_driver);
 }
 pure_initcall(msm_restart_init);
+
+#ifdef CONFIG_FIH_DLD
+/* FIH: enable host ramdump by ro.boot.dld=1 */
+static int __init fih_dld_init(char *str)
+{
+	int val;
+
+	if (1 == get_option(&str,&val)) {
+		if (1 == val) {
+			download_mode = 1;
+			set_dload_mode(download_mode);
+			pr_err("%s: download_mode = %d\n", __func__, download_mode);
+		}
+	}
+
+	return 1;
+}
+
+__setup("androidboot.dld=", fih_dld_init);
+#endif

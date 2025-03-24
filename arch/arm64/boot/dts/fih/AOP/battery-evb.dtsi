@@ -1,0 +1,143 @@
+/* Battery Data */
+/delete-node/ &mtp_batterydata;
+
+&vendor {
+	fih_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;					/* qti:15 */
+		#include "fg-gen3-batterydata-scud-3320mah-aop.dtsi"
+	};
+};
+
+/* Fuel Gauge */
+&pmi8998_fg {
+	status = "ok";
+	qcom,battery-data = <&fih_batterydata>;					/* qti:mtp_batterydata */
+	qcom,fg-cutoff-voltage = <3400>;					/* def:3200 (mV) */
+	qcom,fg-empty-voltage = <2800>;						/* def:2850 (mV) */
+	qcom,fg-vbatt-low-thr = <3400>;						/* def:N (mV) */
+	qcom,fg-chg-term-current = <100>;					/* def:100 (mA) */
+	qcom,fg-sys-term-current = <(-250)>;					/* def:-125 (mA) */
+	qcom,fg-chg-term-base-current = <75>;					/* def:75 (mA) */
+	qcom,fg-cutoff-current = <100>;						/* def:500 (mA) */
+	qcom,fg-delta-soc-thr = <1>;						/* def:1 (%) */
+	//qcom,fg-recharge-soc-thr = <95>;					/* qti:98 (%) */
+	qcom,fg-recharge-voltage = <4200>;					/* def:4250 (mV) */
+	/delete-property/ qcom,fg-auto-recharge-soc;				/* qti:T */
+	qcom,fg-rsense-sel = <2>;						/* def:2 (BATFET_SMB) 0x4173 */
+	qcom,fg-jeita-thresholds = <0 15 45 55>;				/* def:0 5 45 50 (C) */
+	qcom,battery-thermal-coefficients = [A2 50 ff];				/* def:N (cus: beta:3450) */
+	//qcom,fg-esr-timer-charging = <0 96>;					/* qti:0 96 (Cycle) */
+	//qcom,fg-esr-timer-awake = <96 96>;					/* qti:96 96 (Cycle) */
+	//qcom,fg-esr-timer-asleep = <256 256>;					/* qti:256 256 (Cycle) */
+	qcom,cycle-counter-en;							/* qti:T */
+	qcom,fg-force-load-profile;						/* def:N */
+	//qcom,cl-start-capacity = <15>;					/* def:15 (%) */
+	//qcom,cl-min-temp = <150>;						/* def:150 (dC) */
+	//qcom,cl-max-temp = <500>;						/* def:500 (dC) */
+	//qcom,cl-max-increment = <5>;						/* def:5 (d%) */
+	//qcom,cl-max-decrement = <100>;					/* def:100 (d%) */
+	//qcom,cl-min-limit = <0>;						/* def:0 (d%) */
+	//qcom,cl-max-limit = <0>;						/* def:0 (d%) */
+	qcom,fg-jeita-hyst-temp = <0>;						/* reg:0 (No hysteresis) 0x4156 */
+	qcom,fg-batt-temp-delta = <2>;						/* def:2 (K) 0x4159 */
+	qcom,hold-soc-while-full;						/* qti:T */
+	qcom,linearize-soc;							/* def:N */
+	//qcom,ki-coeff-full-dischg = <0>;					/* def:0 (245-62256) */
+	//qcom,ki-coeff-hi-chg;							/* def:N (0-62200) */
+	//qcom,ki-coeff-soc-dischg;						/* def:N (0-100) */
+	//qcom,ki-coeff-low-dischg;						/* def:N (0-62200) */
+	//qcom,ki-coeff-med-dischg;						/* def:N (0-62200) */
+	//qcom,ki-coeff-hi-dischg;						/* def:N (0-62200) */
+	//qcom,fg-rconn-mohms;							/* def:N (mOhm) */
+	//qcom,fg-esr-filter-switch-temp = <100>;				/* def:100 (dC) */
+	//qcom,fg-esr-tight-filter-micro-pct = <3907>;				/* def:3907 (0.39 %) */
+	//qcom,fg-esr-broad-filter-micro-pct = <99610>;				/* def:99610 (9.96 %) */
+	//qcom,fg-esr-tight-lt-filter-micro-pct = <30000>;			/* def:30000 (3.00 %) */
+	//qcom,fg-esr-broad-lt-filter-micro-pct = <30000>;			/* def:30000 (3.00 %) */
+	//qcom,fg-esr-rt-filter-switch-temp = <60>;				/* def:60 (dC) */
+	//qcom,fg-esr-tight-rt-filter-micro-pct = <5860>;			/* def:5860 (0.58 %) */
+	//qcom,fg-esr-broad-rt-filter-micro-pct = <156250>;			/* def:156250 (15.62 %) */
+	//qcom,slope-limit-temp-threshold;					/* def:N (dC) */
+	//qcom,slope-limit-coeffs;						/* def:N (d%) */
+	//qcom,fg-esr-clamp-mohms= <20>;					/* def:20 (mOhm) */
+	//qcom,fg-esr-pulse-thresh-ma= <110>;					/* def:110 (mA) */
+	qcom,fg-esr-meas-curr-ma= <240>;					/* def:120 (mA) */
+	//qcom,fg-bmd-en-delay-ms = <200>;					/* def:200 (mS) */
+
+	/* FIH */
+	fih,fg-recharge-voltage-soft-jeita = <4050>;				/* cus:4050 (mV) */
+};
+
+/* Main Charger */
+&pmi8998_charger {
+	status = "ok";
+	qcom,battery-data = <&fih_batterydata>;					/* def:N */
+	qcom,step-charging-enable;						/* def:N */
+	qcom,sw-jeita-enable;							/* def:N */
+	//qcom,wd-bark-time-secs = <64>;					/* def:64 (S) */
+	/delete-property/ qcom,batteryless-platform;				/* def:N */
+	qcom,fcc-max-ua = <3240000>;						/* reg:1000000 (uA) 0x1061 */
+	qcom,fv-max-uv = <4400000>;						/* reg:4350000 (uV) 0x1070 */
+	qcom,usb-icl-ua = <3000000>;						/* reg:1500000 (uA) 0x1370 */
+	qcom,otg-cl-ua = <1500000>;						/* def:1500000 (uA) 0x1152 */
+	qcom,dc-icl-ua = <1000000>;						/* reg:500000 (uA) 0x1470 */
+	//qcom,boost-threshold-ua = <100000>;					/* qti:100000 (uA) */
+	//qcom,min-freq-khz = <600>;						/* def:600 (kHz) */
+	//qcom,max-freq-khz = <2000>;						/* def:2000 (kHz) */
+	/delete-property/ qcom,wipower-max-uw;					/* qti:5000000 (uW) */
+	qcom,thermal-mitigation = <3000000 1500000 1300000 1100000 1000000
+				900000 700000 500000>;				/* qti:3000000 1500000 1000000 500000 (uA) */
+	qcom,float-option = <1>;						/* reg:1 (Treat as a DCP) 0x1363 */
+	/delete-property/ qcom,hvdcp-disable;					/* def:N 0x1362 */
+	//qcom,chg-inhibit-threshold-mv = <0>;					/* reg:100 (mV) 0x1072 */
+	/delete-property/ qcom,auto-recharge-soc;				/* qti:T */
+	///delete-property/ qcom,use-extcon;					/* def:N */
+	/delete-property/ qcom,suspend-input-on-debug-batt;			/* qti:T */
+	//qcom,otg-deglitch-time-ms = <50>;					/* def:50 (mS) */
+	///delete-property/ qcom,disable-stat-sw-override;			/* def:N */
+
+	/* FIH */
+	fih,info-update-ms = <10000>;
+	fih,panel-on-usb-icl-ua = <1200000>;
+	fih,sw-jeita-recover;
+	fih,sw-jeita-full-charge;
+	fih,charging-forecast-enable;
+	fih,charging-check-enable;
+	fih,aicl-rerun = <1>;
+};
+
+/* Slave Charger */
+&qupv3_se10_i2c {
+	status = "ok";
+};
+
+&smb1355_charger_0 {
+	status = "ok";
+	/delete-property/ qcom,disable-ctm;					/* qti:T */
+	qcom,parallel-mode = <3>;						/* def:3 (USBMID_USBMID) */
+	/delete-property/ qcom,stacked-batfet;					/* def:N (NON_STACKED_BATFET) */
+	///delete-property/ qcom,hw-die-temp-mitigation;			/* def:N */
+	//qcom,die-temp-threshold-degc = <90>;					/* def:90 (C) */
+};
+
+&smb1355_charger_1 {
+	status = "ok";
+	/delete-property/ qcom,disable-ctm;					/* qti:T */
+	qcom,parallel-mode = <3>;						/* def:3 (USBMID_USBMID) */
+	/delete-property/ qcom,stacked-batfet;					/* def:N (NON_STACKED_BATFET) */
+	///delete-property/ qcom,hw-die-temp-mitigation;			/* def:N */
+	//qcom,die-temp-threshold-degc = <90>;					/* def:90 (C) */
+};
+
+/* QNOVO */
+&pmi8998_qnovo {
+	status = "disabled";
+};
+
+/* Wireless Charger - IDT,P9221 */
+#include "p9221-wireless-charger.dtsi"
+
+&pmi8998_pdphy {
+	vbus-supply = <&smb2_vbus>;
+};
+

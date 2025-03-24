@@ -18,6 +18,7 @@
 enum mxt_suspend_mode {
 	MXT_SUSPEND_DEEP_SLEEP	= 0,
 	MXT_SUSPEND_T9_CTRL	= 1,
+	MXT_SUSPEND_REGULATOR = 2,
 };
 
 /* The platform data for the Atmel maXTouch touchscreen driver */
@@ -26,6 +27,14 @@ struct mxt_platform_data {
 	u8 t19_num_keys;
 	const unsigned int *t19_keymap;
 	enum mxt_suspend_mode suspend_mode;
+	int t15_num_keys;
+	const unsigned int *t15_keymap;
+	unsigned int gpio_reset;
+	unsigned int gpio_irq;
+	u32 enable_vdd_by_gpio; // 0:  vdd regulator, 1: gpio ldo
+	const char *cfg_name;
+	const char *fw_name;
+	const char *input_name;
 };
 
 #endif /* __LINUX_PLATFORM_DATA_ATMEL_MXT_TS_H */

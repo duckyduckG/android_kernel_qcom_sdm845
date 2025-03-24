@@ -499,6 +499,29 @@ static struct msm_geni_serial_port *get_port_from_line(int line,
 	return port;
 }
 
+/* FIH, add for asic uart control */
+int asic_uart_clk_enable(int line, int on)
+{
+	struct msm_geni_serial_port *port;
+	struct uart_port *uport;
+	int ret = 0, i = 0;
+
+	port = get_port_from_line(line, false);
+	if (IS_ERR_OR_NULL(port))
+		return -ENODEV;
+
+	uport = &port->uport;
+	if (on) {
+		ret = vote_clock_on(uport);
+	} else {
+		for (i = 0; i < port->ioctl_count; i++)
+			ret = vote_clock_off(uport);
+	}
+
+	return ret;
+}
+EXPORT_SYMBOL(asic_uart_clk_enable);
+
 static int msm_geni_serial_power_on(struct uart_port *uport)
 {
 	int ret = 0;

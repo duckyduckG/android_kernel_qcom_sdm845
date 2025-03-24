@@ -457,6 +457,26 @@
 		status = "disabled";
 	};
 
+	/* add for asic uart pinctrl { */
+	qupv3_se12_2uart: qcom,qup_uart@0xa90000 {
+		compatible = "qcom,msm-geni-serial-hs", "qcom,msm-geni-uart";
+		reg = <0xa90000 0x4000>;
+		reg-names = "se_phys";
+		clock-names = "se-clk", "m-ahb", "s-ahb";
+		clocks = <&clock_gcc GCC_QUPV3_WRAP1_S4_CLK>,
+			<&clock_gcc GCC_QUPV3_WRAP_1_M_AHB_CLK>,
+			<&clock_gcc GCC_QUPV3_WRAP_1_S_AHB_CLK>;
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&qupv3_se12_2uart_active>;
+		pinctrl-1 = <&qupv3_se12_2uart_sleep>;
+		interrupts-extended = <&pdc GIC_SPI 357 0>,
+			<&tlmm 52 0>;
+		qcom,wakeup-byte = <0xFD>;
+		qcom,wrapper-core = <&qupv3_1>;
+		status = "disabled";
+	};
+	/* add for asic uart pinctrl } */
+
 	/* I2C */
 	qupv3_se8_i2c: i2c@a80000 {
 		compatible = "qcom,i2c-geni";

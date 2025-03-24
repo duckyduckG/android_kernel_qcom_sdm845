@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -131,8 +131,8 @@ enum sensor_sub_module {
 	SUB_MODULE_LED_FLASH,
 	SUB_MODULE_CSID,
 	SUB_MODULE_CSIPHY,
+	SUB_MODULE_CSIPHY1,
 	SUB_MODULE_OIS,
-	SUB_MODULE_IR_LED,
 	SUB_MODULE_EXT,
 	SUB_MODULE_MAX,
 };
@@ -160,6 +160,7 @@ enum cam_sensor_packet_opcodes {
 	CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE,
 	CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG,
 	CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF,
+	CAM_SENSOR_PACKET_OPCODE_SENSOR_LRI_CAPTURE,
 	CAM_SENSOR_PACKET_OPCODE_SENSOR_NOP = 127
 };
 

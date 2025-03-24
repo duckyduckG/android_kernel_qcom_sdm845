@@ -238,7 +238,12 @@ done:
 	mutex_unlock(&m_ctrl->ctrl->ctrl_lock);
 	return rc;
 }
-
+#ifdef CONFIG_DRM_DSI_CUSTOMIZE
+int dsi_display_customize_cmd_engine_enable(struct dsi_display *display)
+{
+	return dsi_display_cmd_engine_enable(display);
+}
+#endif
 static int dsi_display_cmd_engine_disable(struct dsi_display *display)
 {
 	int rc = 0;
@@ -281,6 +286,12 @@ done:
 	mutex_unlock(&m_ctrl->ctrl->ctrl_lock);
 	return rc;
 }
+#ifdef CONFIG_DRM_DSI_CUSTOMIZE
+int dsi_display_customize_cmd_engine_disable(struct dsi_display *display)
+{
+	return dsi_display_cmd_engine_disable(display);
+}
+#endif
 
 static void dsi_display_aspace_cb_locked(void *cb_data, bool is_detach)
 {
@@ -508,6 +519,12 @@ error:
 	return rc;
 }
 
+#ifdef CONFIG_DRM_DSI_CUSTOMIZE
+int dsi_customize_host_alloc_cmd_tx_buffer(struct dsi_display *display)
+{
+	return dsi_host_alloc_cmd_tx_buffer(display);
+}
+#endif
 static bool dsi_display_validate_reg_read(struct dsi_panel *panel)
 {
 	int i, j = 0;
@@ -971,6 +988,7 @@ static bool dsi_display_get_cont_splash_status(struct dsi_display *display)
 	return true;
 }
 
+#ifndef CONFIG_AOD_FEATURE
 int dsi_display_set_power(struct drm_connector *connector,
 		int power_mode, void *disp)
 {
@@ -995,7 +1013,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 	}
 	return rc;
 }
-
+#endif
 static ssize_t debugfs_dump_info_read(struct file *file,
 				      char __user *user_buf,
 				      size_t user_len,

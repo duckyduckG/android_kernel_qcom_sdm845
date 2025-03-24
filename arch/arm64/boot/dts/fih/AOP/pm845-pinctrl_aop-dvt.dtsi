@@ -1,0 +1,251 @@
+&pm8998_gpios {
+	interrupts = <0x0 0xc0 0 IRQ_TYPE_NONE>,
+			<0x0 0xc1 0 IRQ_TYPE_NONE>,
+			<0x0 0xc3 0 IRQ_TYPE_NONE>,
+			<0x0 0xc4 0 IRQ_TYPE_NONE>,
+			<0x0 0xc5 0 IRQ_TYPE_NONE>,
+			<0x0 0xc6 0 IRQ_TYPE_NONE>,
+			<0x0 0xc7 0 IRQ_TYPE_NONE>,
+			<0x0 0xc8 0 IRQ_TYPE_NONE>,
+			<0x0 0xc9 0 IRQ_TYPE_NONE>,
+			<0x0 0xca 0 IRQ_TYPE_NONE>,
+			<0x0 0xcb 0 IRQ_TYPE_NONE>,
+			<0x0 0xcc 0 IRQ_TYPE_NONE>,
+			<0x0 0xcd 0 IRQ_TYPE_NONE>,
+			<0x0 0xce 0 IRQ_TYPE_NONE>,
+			<0x0 0xcf 0 IRQ_TYPE_NONE>,
+			<0x0 0xd0 0 IRQ_TYPE_NONE>,
+			<0x0 0xd1 0 IRQ_TYPE_NONE>,
+			<0x0 0xd2 0 IRQ_TYPE_NONE>,
+			<0x0 0xd4 0 IRQ_TYPE_NONE>,
+			<0x0 0xd6 0 IRQ_TYPE_NONE>;
+	interrupt-names = "pm8998_gpio1", "pm8998_gpio2",
+			"pm8998_gpio4", "pm8998_gpio5",
+			"pm8998_gpio6", "pm8998_gpio7",
+			"pm8998_gpio8", "pm8998_gpio9",
+			"pm8998_gpio10", "pm8998_gpio11",
+			"pm8998_gpio12", "pm8998_gpio13",
+			"pm8998_gpio14", "pm8998_gpio15",
+			"pm8998_gpio16", "pm8998_gpio17",
+			"pm8998_gpio18", "pm8998_gpio19",
+			"pm8998_gpio21", "pm8998_gpio23";
+	qcom,gpios-disallowed = <3 20 22 24 25 26>;
+
+	pm8998_gpio1 { /* no use */
+		pm8998_gpio1_default: pm8998_gpio1_default {
+			pins = "gpio1";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio2 { /* no use */
+		pm8998_gpio2_default: pm8998_gpio2_default {
+			pins = "gpio2";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <0>;
+		};
+	};
+
+	/*pm8998_gpio3 { // WLAN_SW_CTRL - disallow config
+	};*/
+
+	pm8998_gpio4 { /* CAM2_DVDD_EN */
+		pm8998_gpio4_default: pm8998_gpio4_default {
+			pins = "gpio4";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio5 { /* WUHB_INT */
+		pm8998_gpio5_default: pm8998_gpio5_default {
+			pins = "gpio5";
+			function = "normal";
+			input-enable;
+			bias-disable;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio6 { /* VOL_DOWN_N */
+		pm8998_gpio6_default: pm8998_gpio6_default {
+			pins = "gpio6";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio7 { /* CAM2_AVDD_EN */
+		pm8998_gpio7_active: pm8998_gpio7_active {
+			pins = "gpio7";
+			function = "normal";
+			bias-disable;
+			power-source = <0>;
+		};
+
+		pm8998_gpio7_suspend: pm8998_gpio7_suspend {
+			pins = "gpio7";
+			function = "normal";
+			output-low;
+			bias-disable;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio8 { /* CAM2_IOVDD_EN */
+		pm8998_gpio8_default: pm8998_gpio8_default {
+			pins = "gpio8";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio9 { /* ASIC1_PLL_BYPASS_L */
+		pm8998_gpio9_default: pm8998_gpio9_default {
+			pins = "gpio9";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio10 { /* ASIC1_MODE0 */
+		pm8998_gpio10_default: pm8998_gpio10_default {
+			pins = "gpio10";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio11 { /* PM845_GPIO_11 / TP2107 */
+		pm8998_gpio11_default: pm8998_gpio11_default {
+			pins = "gpio11";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio12 { /* ASIC1_XTAL_BYPASS */
+		pm8998_gpio12_default: pm8998_gpio12_default {
+			pins = "gpio12";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio13 { /* VB_AMP_EN */
+		pm8998_gpio13_default: pm8998_gpio13_default {
+			pins = "gpio13";
+			function = "normal";
+			output-low;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio14 { /* no use */
+		pm8998_gpio14_default: pm8998_gpio14_default {
+			pins = "gpio14";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio15 { /* SAMP_RESET */
+		pm8998_gpio15_default: pm8998_gpio15_default {
+			pins = "gpio15";
+			function = "normal";
+			output-high;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio16 { /* no use */
+		pm8998_gpio16_default: pm8998_gpio16_default {
+			pins = "gpio16";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio17 { /* no use */
+		pm8998_gpio17_default: pm8998_gpio17_default {
+			pins = "gpio17";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio18 { /* SMB_STAT */
+		pm8998_gpio18_default: pm8998_gpio18_default {
+			pins = "gpio18";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
+
+	pm8998_gpio19 { /* no use */
+		pm8998_gpio19_default: pm8998_gpio19_default {
+			pins = "gpio19";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <1>;
+		};
+	};
+
+	/*pm8998_gpio20 { // WIPWR_RST_N - disallow config
+	};*/
+
+	pm8998_gpio21 { /* no use */
+		pm8998_gpio21_default: pm8998_gpio21_default {
+			pins = "gpio21";
+			function = "normal";
+			input-enable;
+			bias-pull-down;
+			power-source = <1>;
+		};
+	};
+
+	/*pm8998_gpio22 { // PM845_OPTION_1 - disallow config
+	};*/
+
+	pm8998_gpio23 { /* WCSS_PWR_REQ */
+		pm8998_gpio23_default: pm8998_gpio23_default {
+			pins = "gpio23";
+			function = "normal";
+			input-enable;
+			bias-disable;
+			power-source = <1>;
+		};
+	};
+
+	/*pm8998_gpio24 { // PM845_GPIO24 - disallow config
+	};*/
+
+	/*pm8998_gpio25 { // PM845_OPTION_2 - disallow config
+	};*/
+
+	/*pm8998_gpio26 { // PM_SLB - disallow config
+	};*/
+};

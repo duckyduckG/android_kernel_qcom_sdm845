@@ -1,0 +1,60 @@
+&soc {
+	i2c@a8c000{
+		status = "ok";
+        qcom,clk-freq-out = <1000000>;
+		i2c_camera@10 {
+			cell-index = <0>;
+			compatible = "i2c_camera";
+			reg = <0x10>;
+			asic_supported = <1>;
+			csiphy-sd-index = <1>;
+			csiphy1-sd-index = <0>;
+			sensor-position-roll = <90>;
+			sensor-position-pitch = <0>;
+			sensor-position-yaw = <180>;
+			led-flash-src = <&led_flash_rear>;
+			cam_vio-supply = <&pm8998_lvs1>;
+			cam_vana-supply = <&pmi8998_bob>;
+			cam_vdig-supply = <&camera_rear_ldo>;
+			cam_clk-supply = <&titan_top_gdsc>;
+			regulator-names = "cam_vio", "cam_vana", "cam_vdig",
+				"cam_clk";
+			rgltr-cntrl-support;
+			rgltr-min-voltage = <0 3312000 1050000 0>;
+			rgltr-max-voltage = <0 3600000 1050000 0>;
+			rgltr-load-current = <0 80000 105000 0>;
+			gpio-no-mux = <0>;
+			pinctrl-names = "cam_default", "cam_suspend";
+			pinctrl-0 = <&cam_sensor_mclk0_active>;
+			pinctrl-1 = <&cam_sensor_mclk0_suspend>;
+			gpios = <&tlmm 13 0>,
+				<&tlmm 80 0>,
+				<&tlmm 79 0>,
+				<&tlmm 29 0>,
+				<&tlmm 129 0>,
+				<&tlmm 23 0>;
+			gpio-reset = <1>;
+			gpio-vana = <2>;
+			gpio-standby = <3>;
+			gpio-custom1 = <4>;
+			gpio-custom2 = <5>;
+			gpio-req-tbl-num = <0 1 2 3 4 5>;
+			gpio-req-tbl-flags = <1 0 0 0 0 0>;
+			gpio-req-tbl-label = "CAMIF_MCLK0",
+					"ASIC_RESET_L",
+					"CAM_VANA",
+					"ASIC_POR_N",
+					"CCB_PWR_EN",
+					"ASIC_MODE1";
+			sensor-mode = <0>;
+			cci-master = <0>;
+			status = "ok";
+			clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
+			clock-names = "cam_clk";
+			clock-cntl-level = "turbo";
+			clock-rates = <24000000>;
+			asic-irq = <&tlmm 128 0>;
+			asic-uart-src = <&qupv3_se12_2uart>;
+		};
+	};
+};

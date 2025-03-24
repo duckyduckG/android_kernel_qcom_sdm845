@@ -149,3 +149,30 @@ config DRM_SDE_RSC
           avoids the display core power collapse. A client can also register
           for display core power collapse events on rsc.
 
+config DRM_DSI_CUSTOMIZE
+	bool "Enable Custimize options"
+	default n
+	help
+        Chose this option will add custimize feature in DSI driver
+
+config AOD_FEATURE
+	bool "Enable AOD control API options"
+	depends on DRM_DSI_CUSTOMIZE
+	default n
+	help
+        Chose this option will add AOD feature in DSI driver
+
+config DRM_DSI_AOD_LGD_EA9151
+	bool "Enable LGD EA9151 panel API options"
+	depends on AOD_FEATURE
+	default n
+	help
+        Chose this option will add LGD EA9151 panel API in DSI driver
+
+config DRM_DSI_LGD_EA9151_HBM
+	bool "Enable LGD EA9151 panel HBM options"
+	depends on DRM_DSI_CUSTOMIZE
+	default n
+	help
+        Chose this option will add LGD EA9151 panel HBM in DSI driver
+

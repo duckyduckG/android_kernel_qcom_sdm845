@@ -295,6 +295,9 @@ struct fg_dt_props {
 	int	delta_soc_thr;
 	int	recharge_soc_thr;
 	int	recharge_volt_thr_mv;
+#if defined(CONFIG_FIH_BATTERY)
+	int	recharge_volt_soft_jeita_thr_mv;
+#endif /* CONFIG_FIH_BATTERY */
 	int	rsense_sel;
 	int	esr_timer_charging[NUM_ESR_TIMERS];
 	int	esr_timer_awake[NUM_ESR_TIMERS];
@@ -338,6 +341,9 @@ struct fg_dt_props {
 /* parameters from battery profile */
 struct fg_batt_props {
 	const char	*batt_type_str;
+#if defined(CONFIG_FIH_BATTERY)
+	const char	*batt_mfr_str;
+#endif /* CONFIG_FIH_BATTERY */
 	char		*batt_profile;
 	int		float_volt_uv;
 	int		vbatt_full_mv;

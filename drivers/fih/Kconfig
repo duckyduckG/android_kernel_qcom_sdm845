@@ -1,0 +1,103 @@
+#
+# fih driver
+#
+
+menu "fih driver"
+
+config FIH
+	bool "fih"
+	default n
+	help
+	  support fih
+
+config FIH_AOP
+	bool "fih_aop"
+	default n
+	help
+	  support fih_aop
+
+config FIH_INFO
+	bool "fih info"
+	depends on FIH
+	default n
+	help
+	  support fih info virtual file
+
+config FIH_NV
+	bool "fih nv"
+	depends on FIH
+	default n
+	help
+	  support fih nv function
+
+config FIH_UFS
+	bool "fih ufs"
+	depends on FIH
+	default n
+	help
+	  support fih ufs virtual file
+
+config FIH_TOUCH
+	bool "fih touch"
+	depends on FIH
+	default n
+	help
+	  support fih touch virtual file
+
+config FIH_MFR
+	bool "fih mfr"
+	depends on FIH
+	default y
+	help
+	  support fih mfr virtual file
+
+config FIH_BATTERY
+	bool "fih battery"
+	depends on FIH
+	default n
+	help
+	  support fih battery
+
+config FIH_LCM
+	bool "fih Lcm"
+	depends on FIH
+	default n
+	help
+	  support fih Lcm
+
+config FIH_KEY
+	bool "fih key"
+	depends on FIH
+	default n
+	help
+	  support fih key logging
+
+config FIH_DLD
+	bool "fih dld"
+	depends on FIH
+	default n
+	help
+	  support enable host ramdump by cmdline
+
+config FIH_SUSPEND_RESUME_LOG
+	bool "FIH LOG about suspend/resume"
+	depends on FIH
+	default n
+	help
+	  Enable more log for suspend/resume debugging.
+
+config FIH_DUMP_WAKELOCK
+	bool "Show wakelock info after screen off."
+	depends on FIH
+	default n
+	help
+	  Show active wakelock info after screen off.
+
+config FIH_RPMH_MASTER_STATS
+	bool "Show rpmh master stats."
+	depends on FIH
+	default n
+	help
+	  Show rpmh master stats when device resume from suspend.
+
+endmenu
