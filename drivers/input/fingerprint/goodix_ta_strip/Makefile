@@ -1,0 +1,1 @@
+obj-$(CONFIG_FINGERPRINT_GOODIX_TA_STRIP) += gf_spi.o
