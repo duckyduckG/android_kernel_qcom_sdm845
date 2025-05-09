@@ -141,6 +141,7 @@ static inline void gpio_reset(struct gf_dev *gf_dev) {
 #define GF_IOC_RESET _IO(GF_IOC_MAGIC, 2)
 #define GF_IOC_ENABLE_IRQ _IO(GF_IOC_MAGIC, 3)
 #define GF_IOC_DISABLE_IRQ _IO(GF_IOC_MAGIC, 4)
+#define GF_IOC_ENTER_SLEEP_MODE _IO(GF_IOC_MAGIC, 10)
 static inline long gf_ioctl(struct file *filp, unsigned int cmd,
 							unsigned long arg) {
 	struct gf_dev *gf_dev = &gf;
@@ -158,6 +159,8 @@ static inline long gf_ioctl(struct file *filp, unsigned int cmd,
 		break;
 	case GF_IOC_RESET:
 		gpio_reset(gf_dev);
+		break;
+	case GF_IOC_ENTER_SLEEP_MODE:
 		break;
 	default:
 		break;
