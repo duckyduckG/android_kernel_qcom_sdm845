@@ -90,7 +90,7 @@ static inline irqreturn_t gf_irq(int irq, void *handle) {
 
 static inline void gf_setup(struct gf_dev *gf_dev) {
 	gf_dev->rst_gpio = of_get_named_gpio(gf_dev->spi->dev.of_node,
-		"goodix,gpio-reset", 0);
+		"gooidx,gpio-reset", 0);
 	gpio_request(gf_dev->rst_gpio, "gpio-reset");
 	gpio_direction_output(gf_dev->rst_gpio, 1);
 	gf_dev->irq_gpio = of_get_named_gpio(gf_dev->spi->dev.of_node,
