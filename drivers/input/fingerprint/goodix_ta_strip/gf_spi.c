@@ -34,6 +34,7 @@ static struct gf_dev {
 	struct regulator *vreg;
 	signed irq_gpio, rst_gpio;
 	int irq, irq_enabled;
+	int proximity_state; /* 0:far 1:near */
 } gf;
 
 #define MAX_MSGSIZE 2
@@ -193,6 +194,38 @@ static const struct file_operations gf_fops = {
 	.release = gf_release,
 };
 
+static inline ssize_t proximity_state_set(struct device *dev,
+       struct device_attribute *attr, const char *buf, size_t count)
+{
+       struct gf_dev *gf_dev = dev_get_drvdata(dev);
+       int rc, val;
+
+       rc = kstrtoint(buf, 10, &val);
+       if (rc)
+               return -EINVAL;
+
+       gf_dev->proximity_state = !!val;
+
+       if (gf_dev->proximity_state) {
+               disable_irq(gf_dev->irq);
+       } else {
+               enable_irq(gf_dev->irq);
+       }
+
+       return count;
+}
+
+static DEVICE_ATTR(proximity_state, S_IWUSR, NULL, proximity_state_set);
+
+static struct attribute *attributes[] = {
+       &dev_attr_proximity_state.attr,
+       NULL
+};
+
+static const struct attribute_group attribute_group = {
+       .attrs = attributes,
+};
+
 static struct class *gf_class;
 #define N_SPI_MINORS 256
 static DECLARE_BITMAP(minors, N_SPI_MINORS);
@@ -202,10 +235,13 @@ static int SPIDEV_MAJOR;
 #define GF_INPUT_NAME "uinput-goodix"
 static inline int gf_probe(struct platform_device *pdev) {
 	struct gf_dev *gf_dev = &gf;
+	struct device *dev = &pdev->dev;
 	unsigned long minor = find_first_zero_bit(minors, N_SPI_MINORS);
 	INIT_LIST_HEAD(&gf_dev->device_entry);
 	gf_dev->spi = pdev;
 	gf_dev->irq_gpio = gf_dev->rst_gpio = -EINVAL;
+	dev_set_drvdata(dev, gf_dev);
+	sysfs_create_group(&dev->kobj, &attribute_group);
 	gf_dev->devt = MKDEV(SPIDEV_MAJOR, minor);
 	mutex_lock(&gf_lock);
 	device_create(gf_class, &gf_dev->spi->dev, gf_dev->devt, gf_dev,
