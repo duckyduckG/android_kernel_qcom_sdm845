@@ -223,7 +223,6 @@ static void cpu_idle_loop(void)
 
 		while (!need_resched()) {
 			check_pgt_cache();
-			rmb();
 
 			if (cpu_is_offline(cpu)) {
 				cpuhp_report_idle_dead();
