@@ -1,0 +1,77 @@
+
+
+name: Kernel CI for Compiling
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clone kernel source
+      uses: actions/checkout@v4
+      with:
+        submodules: false
+        fetch-depth: 1
+
+    - name: Download Neutron Clang
+      run: |
+        mkdir -p $HOME/toolchains/nt
+        cd $HOME/toolchains/nt
+        wget -q https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/download/10032024/neutron-clang-10032024.tar.zst
+        tar --zstd -xf neutron-clang-10032024.tar.zst --strip-components=1
+        ls -la bin
+
+    - name: Set up build environment
+      run: |
+        echo "KBUILD_BUILD_USER=ducky" >> $GITHUB_ENV
+        echo "KBUILD_BUILD_HOST=lotsofduck" >> $GITHUB_ENV
+        echo "CHAIN=nt" >> $GITHUB_ENV
+        echo "DEFCONFIG=vendor/xiaomi/mi845_defconfig" >> $GITHUB_ENV
+        echo "FH_DEFCON=vendor/xiaomi/beryllium.config" >> $GITHUB_ENV
+        echo "FF_DEFCON=vendor/xiaomi/extra/ksu.config" >> $GITHUB_ENV
+        echo "CLANG_PATH=$HOME/toolchains/nt" >> $GITHUB_ENV
+
+    - name: Build kernel
+      run: |
+        export PATH=$CLANG_PATH/bin:$PATH
+        export KBUILD_BUILD_USER KBUILD_BUILD_HOST
+
+        # Create output dir
+        mkdir -p out
+
+        # Generate defconfig
+        make ARCH=arm64 \
+             CC=clang \
+             CROSS_COMPILE=aarch64-linux-gnu- \
+             CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+             LLVM=1 \
+             LD=ld.lld \
+             O=out \
+             $DEFCONFIG $FH_DEFCON $FF_DEFCON \
+             CC="ccache clang"
+
+        # Compile
+        make ARCH=arm64 \
+             CC=clang \
+             CROSS_COMPILE=aarch64-linux-gnu- \
+             CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+             LLVM=1 \
+             LD=ld.lld \
+             O=out \
+             CC="ccache clang" \
+             -j$(nproc --all)
+
+    - name: Get Short SHA
+      run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+    - name: Create GitHub Pre-Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "Kernel for Poco F1 (git-${{ env.SHORT_SHA }})"
+        tag_name: ${{ env.SHORT_SHA }}
+        prerelease: true
+        files: |
+          out/arch/arm64/boot/Image.gz-dtb
