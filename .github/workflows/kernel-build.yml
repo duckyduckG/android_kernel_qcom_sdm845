@@ -18,12 +18,11 @@ jobs:
 
     - name: Download Neutron Clang
       run: |
-        mkdir -p $HOME/toolchains
-        cd $HOME/toolchains
+        mkdir -p $HOME/toolchains/nt
+        cd $HOME/toolchains/nt
         wget -q https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/download/10032024/neutron-clang-10032024.tar.zst
-        tar --zstd -xf neutron-clang-10032024.tar.zst
-        mv neutron-clang-10032024 nt
-        ls -la nt/bin
+        tar --zstd -xf neutron-clang-10032024.tar.zst --strip-components=1
+        ls -la bin
 
     - name: Set up build environment
       run: |
