@@ -16,26 +16,24 @@ jobs:
         submodules: false
         fetch-depth: 1
 
-    - name: Download Download ZyC Clang 16.0.6
+    - name: Download Neutron Clang
       run: |
         mkdir -p $HOME/toolchains/nt
         cd $HOME/toolchains/nt
-        wget -q https://github.com/ZyCromerZ/Clang/releases/download/16.0.6-20240430-release/Clang-16.0.6-20240430.tar.gz
-        tar -xf Clang-16.0.6-20240430.tar.gz --strip-components=1
+        wget -q https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/download/10032024/neutron-clang-10032024.tar.zst
+        tar --zstd -xf neutron-clang-10032024.tar.zst --strip-components=1
         ls -la bin
 
     - name: Set up build environment
       run: |
         echo "KBUILD_BUILD_USER=ducky" >> $GITHUB_ENV
         echo "KBUILD_BUILD_HOST=lotsofduck" >> $GITHUB_ENV
-        echo "CHAIN=nt" >> $GITHUB_ENV
         echo "DEFCONFIG=vendor/xiaomi/mi845_defconfig" >> $GITHUB_ENV
         echo "FH_DEFCON=vendor/xiaomi/beryllium.config" >> $GITHUB_ENV
-        echo "CLANG_PATH=$HOME/toolchains/nt" >> $GITHUB_ENV
 
     - name: Build kernel
       run: |
-        export PATH=$CLANG_PATH/bin:$PATH
+        export PATH=$HOME/toolchains/nt/bin:$PATH
         export KBUILD_BUILD_USER KBUILD_BUILD_HOST
 
         # Create output dir
