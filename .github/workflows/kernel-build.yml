@@ -21,12 +21,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-arm-linux-gnueabi ccache
 
-    - name: Download Neutron Clang
+    - name: Download Download ZyC Clang 16.0.6
       run: |
         mkdir -p $HOME/toolchains/nt
         cd $HOME/toolchains/nt
-        wget -q https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/download/10032024/neutron-clang-10032024.tar.zst
-        tar --zstd -xf neutron-clang-10032024.tar.zst --strip-components=1
+        wget -q https://github.com/ZyCromerZ/Clang/releases/download/16.0.6-20240430-release/Clang-16.0.6-20240430.tar.gz
+        tar -xf Clang-16.0.6-20240430.tar.gz --strip-components=1
         ls -la bin
 
     - name: Set up build environment
@@ -36,7 +36,6 @@ jobs:
         echo "CHAIN=nt" >> $GITHUB_ENV
         echo "DEFCONFIG=vendor/xiaomi/mi845_defconfig" >> $GITHUB_ENV
         echo "FH_DEFCON=vendor/xiaomi/beryllium.config" >> $GITHUB_ENV
-        echo "FF_DEFCON=vendor/xiaomi/extra/ksu.config" >> $GITHUB_ENV
         echo "CLANG_PATH=$HOME/toolchains/nt" >> $GITHUB_ENV
 
     - name: Build kernel
@@ -54,7 +53,7 @@ jobs:
              CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
              LLVM=1 \
              LD=ld.lld \
-             $DEFCONFIG $FH_DEFCON $FF_DEFCON \
+             $DEFCONFIG $FH_DEFCON \
              O=out
 
         # Compile
