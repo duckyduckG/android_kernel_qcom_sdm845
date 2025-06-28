@@ -16,6 +16,11 @@ jobs:
         submodules: false
         fetch-depth: 1
 
+    - name : Install required host tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-linux-gnueabi ccache
+
     - name: Download Neutron Clang
       run: |
         mkdir -p $HOME/toolchains/nt
@@ -49,9 +54,8 @@ jobs:
              CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
              LLVM=1 \
              LD=ld.lld \
-             O=out \
              $DEFCONFIG $FH_DEFCON $FF_DEFCON \
-             CC="ccache clang"
+             O=out
 
         # Compile
         make ARCH=arm64 \
@@ -61,7 +65,6 @@ jobs:
              LLVM=1 \
              LD=ld.lld \
              O=out \
-             CC="ccache clang" \
              -j$(nproc --all)
 
     - name: Get Short SHA
