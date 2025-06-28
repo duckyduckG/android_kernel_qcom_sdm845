@@ -16,11 +16,6 @@ jobs:
         submodules: false
         fetch-depth: 1
 
-    - name : Install required host tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabi ccache
-
     - name: Download Download ZyC Clang 16.0.6
       run: |
         mkdir -p $HOME/toolchains/nt
