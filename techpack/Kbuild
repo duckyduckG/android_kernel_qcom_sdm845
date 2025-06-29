@@ -1,2 +1,2 @@
-obj-y += stub/ audio/
+obj-y += stub/ audio/ xiaomi-sdm845/
 header-y += stub/include/uapi/ audio/include/uapi/
