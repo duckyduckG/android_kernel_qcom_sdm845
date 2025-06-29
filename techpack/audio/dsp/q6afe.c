@@ -26,7 +26,10 @@
 #include <dsp/q6audio-v2.h>
 #include <ipc/apr_tal.h>
 #include "adsp_err.h"
+
+#ifdef CONFIG_SND_ELLIPTIC
 #include <dsp/apr_elliptic.h>
+#endif
 
 #define WAKELOCK_TIMEOUT	5000
 enum {
@@ -385,11 +388,13 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			wake_up(&this_afe.wait[data->token]);
 		else
 			return -EINVAL;
-} else if (data->opcode == ULTRASOUND_OPCODE) {
+#ifdef CONFIG_SND_ELLIPTIC
+	} else if (data->opcode == ULTRASOUND_OPCODE) {
 		if (data->payload != NULL)
 			elliptic_process_apr_payload(data->payload);
 		else
 			pr_err("[ELUS]: payload is invalid");
+#endif
 	} else if (data->payload_size) {
 		uint32_t *payload;
 		uint16_t port_id = 0;
@@ -1134,6 +1139,7 @@ fail_cmd:
 	return ret;
 }
 
+#ifdef CONFIG_SND_ELLIPTIC
 /* ELUS Begin */
 afe_ultrasound_state_t elus_afe = {
        .ptr_apr = &this_afe.apr,
@@ -1144,6 +1150,7 @@ afe_ultrasound_state_t elus_afe = {
 };
 EXPORT_SYMBOL(elus_afe);
 /* ELUS End */
+#endif
 
 static void afe_send_cal_spkr_prot_tx(int port_id)
 {

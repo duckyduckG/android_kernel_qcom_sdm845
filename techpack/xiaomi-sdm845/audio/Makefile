@@ -1,2 +1,3 @@
 obj-$(CONFIG_SND_SOC_TAS2559) += tas2559/
 obj-$(CONFIG_SND_SOC_TAS2557) += tas2557/
+obj-$(CONFIG_SND_ELLIPTIC) += elliptic/
