@@ -26,10 +26,13 @@
 #define ISP_STATS_STREAM_BIT  0x80000000
 
 #define VFE_HW_LIMIT 1
+#ifndef CONFIG_MACH_XIAOMI
 #define ISP_KERNEL_STATE 1
+#endif
 
 struct msm_vfe_cfg_cmd_list;
 
+#ifndef CONFIG_MACH_XIAOMI
 struct isp_kstate {
 	uint32_t kernel_sofid;
 	uint32_t drop_reconfig;
@@ -37,6 +40,7 @@ struct isp_kstate {
 	uint32_t dual_cam_drop_detected;
 	uint32_t dual_cam_drop;
 };
+#endif
 
 enum ISP_START_PIXEL_PATTERN {
 	ISP_BAYER_RGRGRG,
