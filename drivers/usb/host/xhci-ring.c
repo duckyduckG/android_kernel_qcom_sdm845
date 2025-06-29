@@ -1304,6 +1304,7 @@ void xhci_cleanup_command_queue(struct xhci_hcd *xhci)
 void xhci_handle_command_timeout(struct work_struct *work)
 {
 	struct xhci_hcd *xhci;
+	int ret;
 	unsigned long flags;
 	u64 hw_ring_state;
 
