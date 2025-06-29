@@ -6747,8 +6747,6 @@ static int mxt_probe(struct i2c_client *client,
 	proc_create("tp_selftest", 0664, NULL, &mxt_selftest_ops);
 	proc_create("tp_lockdown_info", 0664, NULL, &mxt_lockdown_info_ops);
 
-	}
-
 	return 0;
 
 err_remove_sysfs_group:
