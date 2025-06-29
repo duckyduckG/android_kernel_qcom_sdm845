@@ -74,6 +74,9 @@ lkdtm-$(CONFIG_LKDTM)		+= lkdtm_perms.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_rodata_objcopy.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_usercopy.o
 
+# Xiaomi
+obj-$(CONFIG_RTMV20)		+= rtmv20.o
+
 CFLAGS_lkdtm_rodata.o		+= $(DISABLE_LTO)
 KCOV_INSTRUMENT_lkdtm_rodata.o	:= n
 
