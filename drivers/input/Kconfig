@@ -218,6 +218,9 @@ source "drivers/input/sensors/smi130/Kconfig"
 
 source "drivers/input/rmi4/Kconfig"
 
+# Xiaomi
+source "drivers/input/fingerprint/Kconfig"
+
 endif
 
 menu "Hardware I/O ports"
