@@ -8,7 +8,7 @@
 #include <sound/asound.h>
 #include <sound/soc.h>
 #include <sound/control.h>
-#include "../msm-pcm-routing-v2.h"
+#include "../../../audio/asoc/msm-pcm-routing-v2.h"
 #include <dsp/q6audio-v2.h>
 #include <dsp/apr_audio-v2.h>
 #include <dsp/apr_elliptic.h>
