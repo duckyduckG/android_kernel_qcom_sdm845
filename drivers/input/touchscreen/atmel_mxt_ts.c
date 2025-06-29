@@ -26,7 +26,6 @@
 #include <linux/gpio.h>
 #include <linux/string.h>
 #include <linux/of_gpio.h>
-#include <linux/hwinfo.h>
 #include <linux/power_supply.h>
 #include <linux/notifier.h>
 #include <linux/fb.h>
