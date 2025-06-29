@@ -25,7 +25,7 @@
 #include "cam_req_mgr_dev.h"
 
 static struct cam_req_mgr_core_device *g_crm_core_dev;
-static struct cam_req_mgr_core_link g_links[MAXIMUM_LINKS_PER_SESSION];
+static struct cam_req_mgr_core_link g_links[MAX_LINKS_PER_SESSION];
 
 static void cam_req_mgr_core_link_reset(struct cam_req_mgr_core_link *link)
 {
@@ -48,7 +48,6 @@ static void cam_req_mgr_core_link_reset(struct cam_req_mgr_core_link *link)
 	link->sync_self_ref = 0;
 	link->frame_skip_flag = false;
 	link->sync_link_sof_skip = false;
-	link->open_req_cnt = 0;
 	link->last_flush_id = 0;
 }
 
@@ -1219,7 +1218,7 @@ static struct cam_req_mgr_core_link *__cam_req_mgr_reserve_link(
 			session->num_links, MAX_LINKS_PER_SESSION);
 		return NULL;
 	}
-	for (i = 0; i < MAXIMUM_LINKS_PER_SESSION; i++) {
+	for (i = 0; i < MAX_LINKS_PER_SESSION; i++) {
 		if (!atomic_cmpxchg(&g_links[i].is_used, 0, 1)) {
 			link = &g_links[i];
 			CAM_DBG(CAM_CRM, "alloc link index %d", i);
@@ -1227,7 +1226,7 @@ static struct cam_req_mgr_core_link *__cam_req_mgr_reserve_link(
 			break;
 		}
 	}
-	if (i == MAXIMUM_LINKS_PER_SESSION)
+	if (i == MAX_LINKS_PER_SESSION)
 		return NULL;
 
 	in_q = (struct cam_req_mgr_req_queue *)
@@ -2709,7 +2708,7 @@ int cam_req_mgr_core_device_init(void)
 	mutex_init(&g_crm_core_dev->crm_lock);
 	cam_req_mgr_debug_register(g_crm_core_dev);
 
-	for (i = 0; i < MAXIMUM_LINKS_PER_SESSION; i++) {
+	for (i = 0; i < MAX_LINKS_PER_SESSION; i++) {
 		mutex_init(&g_links[i].lock);
 		spin_lock_init(&g_links[i].link_state_spin_lock);
 		atomic_set(&g_links[i].is_used, 0);

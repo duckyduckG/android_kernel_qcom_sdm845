@@ -356,14 +356,14 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 				"[%s][%d] : Moving req[%llu] from free_list to pending_list",
 				ctx->dev_name, ctx->ctx_id, req->request_id);
 
-		for (j = 0; j < req->num_in_map_entries; j++) {
+		for (i = 0; i < req->num_in_map_entries; i++) {
 			rc = cam_sync_check_valid(
-				req->in_map_entries[j].sync_id);
+				req->in_map_entries[i].sync_id);
 			if (rc) {
 				CAM_ERR(CAM_CTXT,
 					"invalid in map sync object %d",
-					req->in_map_entries[j].sync_id);
-				goto put_ref;
+					req->in_map_entries[i].sync_id);
+				goto free_req;
 			}
 		}
 
