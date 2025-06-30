@@ -2410,14 +2410,14 @@ int smblib_set_prop_input_suspend(struct smb_charger *chg,
 			(bool)val->intval ? "suspend" : "resume", rc);
 		return rc;
 	}
-/*
-	rc = vote(chg->dc_suspend_votable, USER_VOTER, (bool)val->intval, 0);
+
+	rc = vote(chg->dc_suspend_votable, USER_VOTER, false, 0);
 	if (rc < 0) {
 		smblib_err(chg, "Couldn't vote to %s DC rc=%d\n",
 			(bool)val->intval ? "suspend" : "resume", rc);
 		return rc;
 	}
-*/
+
 	smblib_wireless_set_enable(chg, !val->intval);
 
 	power_supply_changed(chg->batt_psy);
@@ -2699,6 +2699,7 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 {
  	int rc;
 	union power_supply_propval batt_temp = {0, };
+	int system_temp_level = 0;
 
 	rc = smblib_get_prop_from_bms(chg,
 				POWER_SUPPLY_PROP_TEMP, &batt_temp);
@@ -2716,12 +2717,12 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 	if (val->intval > chg->thermal_levels)
 		return -EINVAL;
 
-	chg->system_temp_level = val->intval;
+	//chg->system_temp_level = val->intval;
 
 	if (!chg->typec_present)
 		return 0;
 
-	if (chg->system_temp_level >= chg->thermal_levels)
+	if (system_temp_level >= chg->thermal_levels)
 		return vote(chg->chg_disable_votable,
 			THERMAL_DAEMON_VOTER, true, 0);
 
