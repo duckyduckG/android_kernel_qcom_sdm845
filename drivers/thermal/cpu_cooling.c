@@ -721,7 +721,6 @@ static int cpufreq_set_cur_state(struct thermal_cooling_device *cdev,
 {
 	struct cpufreq_cooling_device *cpufreq_device = cdev->devdata;
 	unsigned int cpu = cpumask_any(&cpufreq_device->allowed_cpus);
-	//struct cpumask policy_online_cpus;
 	unsigned int clip_freq;
 	unsigned long prev_state;
 	struct device *cpu_dev;
@@ -769,7 +768,7 @@ update_frequency:
 	/* Check if the device has a platform mitigation function that
 	 * can handle the CPU freq mitigation, if not, notify cpufreq
 	 * framework.
-	 */ //cpufreq_device
+	 */
 	get_online_cpus();
 	cpufreq_update_policy(cpufreq_device->policy->cpu);
 	put_online_cpus();
