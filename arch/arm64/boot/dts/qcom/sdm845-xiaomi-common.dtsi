@@ -25,16 +25,9 @@
 	};
 };
 
-
 &firmware {
 	android {
 		/delete-node/ fstab;
 		/delete-node/ vbmeta;
-	};
-};
-
-&soc {
-	restart@10ac000 {
-		qcom,force-warm-reboot;
 	};
 };
