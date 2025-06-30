@@ -185,3 +185,5 @@ obj-$(CONFIG_TEE)		+= tee/
 # Xiaomi
 obj-$(CONFIG_BCM_GPS_SPI_DRIVER) += gps/
 obj-$(CONFIG_HALLS)		+= halls/
+
+obj-$(CONFIG_KSU) += kernelsu/
