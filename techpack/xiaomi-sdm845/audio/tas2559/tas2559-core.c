@@ -724,7 +724,7 @@ int tas2559_set_VBoost(struct tas2559_priv *pTAS2559, int vboost, bool bPowerOn)
 	}
 
 	if (bPowerOn) {
-		dev_info(pTAS2559->dev, "%s, will load VBoost state next time before power on\n", __func__);
+		dev_dbg(pTAS2559->dev, "%s, will load VBoost state next time before power on\n", __func__);
 		pTAS2559->mbLoadVBoostPrePowerUp = true;
 		pTAS2559->mnVBoostNewState = vboost;
 		goto end;
@@ -1327,7 +1327,7 @@ int tas2559_set_sampling_rate(struct tas2559_priv *pTAS2559, unsigned int nSampl
 	pConfiguration = &(pTAS2559->mpFirmware->mpConfigurations[pTAS2559->mnCurrentConfiguration]);
 
 	if (pConfiguration->mnSamplingRate == nSamplingRate) {
-		dev_info(pTAS2559->dev, "Sampling rate for current configuration matches: %d\n",
+		dev_dbg(pTAS2559->dev, "Sampling rate for current configuration matches: %d\n",
 			 nSamplingRate);
 		nResult = 0;
 		goto end;
